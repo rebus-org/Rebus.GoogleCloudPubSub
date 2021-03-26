@@ -2,10 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Rebus</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="rebus" Version="6.5.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="GoogleCloudPubSub\" />
   </ItemGroup>
 
 </Project>
