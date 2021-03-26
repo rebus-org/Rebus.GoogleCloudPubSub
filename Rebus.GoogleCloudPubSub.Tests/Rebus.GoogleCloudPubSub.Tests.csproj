@@ -16,4 +16,10 @@
     <ProjectReference Include="..\Rebus.GoogleCloudPubSub\Rebus.GoogleCloudPubSub.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="google-cloud-credentials.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
