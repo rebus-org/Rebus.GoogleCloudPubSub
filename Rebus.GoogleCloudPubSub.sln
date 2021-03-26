@@ -1,0 +1,38 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31112.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "stuff", "stuff", "{1ABDD7C1-1F8D-402D-8692-3E4B66962DE0}"
+	ProjectSection(SolutionItems) = preProject
+		CHANGELOG.md = CHANGELOG.md
+		CONTRIBUTING.md = CONTRIBUTING.md
+		LICENSE.md = LICENSE.md
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rebus.GoogleCloudPubSub", "Rebus.GoogleCloudPubSub\Rebus.GoogleCloudPubSub.csproj", "{1DDC598A-1C02-4719-ADC9-25EDEC42B667}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rebus.GoogleCloudPubSub.Tests", "Rebus.GoogleCloudPubSub.Tests\Rebus.GoogleCloudPubSub.Tests.csproj", "{9BB7EAB9-2B22-4036-8A0A-416B378C738F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1DDC598A-1C02-4719-ADC9-25EDEC42B667}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DDC598A-1C02-4719-ADC9-25EDEC42B667}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DDC598A-1C02-4719-ADC9-25EDEC42B667}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DDC598A-1C02-4719-ADC9-25EDEC42B667}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BB7EAB9-2B22-4036-8A0A-416B378C738F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BB7EAB9-2B22-4036-8A0A-416B378C738F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BB7EAB9-2B22-4036-8A0A-416B378C738F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BB7EAB9-2B22-4036-8A0A-416B378C738F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F1157E7D-0FF4-4BC6-9B9C-6A97DB3D0A4E}
+	EndGlobalSection
+EndGlobal

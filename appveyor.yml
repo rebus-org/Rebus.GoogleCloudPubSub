@@ -1,0 +1,14 @@
+image: Visual Studio 2019
+
+shallow_clone: true
+
+cache:
+  - packages -> **\packages.config
+  - '%LocalAppData%\NuGet\Cache'
+
+before_build:
+  - appveyor-retry dotnet restore -v Minimal
+
+build_script:
+  - dotnet build Rebus.GoogleCloudPubSub -c Release 
+  - dotnet build Rebus.GoogleCloudPubSub.Tests -c Release 
