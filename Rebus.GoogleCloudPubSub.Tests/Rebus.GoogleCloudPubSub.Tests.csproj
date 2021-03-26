@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Cloud.PubSub.V1" Version="2.4.0" />
     <PackageReference Include="microsoft.net.test.sdk" Version="16.9.1" />
     <PackageReference Include="nunit" Version="3.13.1" />
     <PackageReference Include="nunit3testadapter" Version="3.17.0" />

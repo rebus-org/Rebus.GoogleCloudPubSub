@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Cloud.PubSub.V1" Version="2.4.0" />
     <PackageReference Include="rebus" Version="6.5.5" />
   </ItemGroup>
 
