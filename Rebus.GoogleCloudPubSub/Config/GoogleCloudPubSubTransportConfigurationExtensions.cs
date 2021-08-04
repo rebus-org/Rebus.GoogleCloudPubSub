@@ -6,19 +6,21 @@ namespace Rebus.Config
 {
     public static class GoogleCloudPubSubTransportConfigurationExtensions
     {
-        public static void UsePubSub(this StandardConfigurer<ITransport> configurer, string inputQueueName)
+        public static void UsePubSub(this StandardConfigurer<ITransport> configurer, string projectId, string inputQueueName)
         {
             if (configurer == null) throw new ArgumentNullException(nameof(configurer));
+            if (projectId == null) throw new ArgumentNullException(nameof(projectId));
             if (inputQueueName == null) throw new ArgumentNullException(nameof(inputQueueName));
          
-            configurer.Register(c => new GoogleCloudPubSubTransport(inputQueueName));
+            configurer.Register(c => new GoogleCloudPubSubTransport(projectId, inputQueueName));
         }
 
-        public static void UsePubSubAsOneWayClient(this StandardConfigurer<ITransport> configurer)
+        public static void UsePubSubAsOneWayClient(this StandardConfigurer<ITransport> configurer, string projectId)
         {
             if (configurer == null) throw new ArgumentNullException(nameof(configurer));
+            if (projectId == null) throw new ArgumentNullException(nameof(projectId));
 
-            configurer.Register(c => new GoogleCloudPubSubTransport(null));
+            configurer.Register(c => new GoogleCloudPubSubTransport(projectId, null));
         }
     }
 }

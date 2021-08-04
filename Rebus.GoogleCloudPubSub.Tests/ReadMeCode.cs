@@ -13,7 +13,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
         public void Normal()
         {
             Configure.With(Using(new BuiltinHandlerActivator()))
-                .Transport(t => t.UsePubSub("your_queue"))
+                .Transport(t => t.UsePubSub("alluring-brewski-123456", "your_queue"))
                 .Start();
         }
 
@@ -21,7 +21,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
         public void OneWayClient()
         {
             var bus = Configure.With(Using(new BuiltinHandlerActivator()))
-                .Transport(t => t.UsePubSubAsOneWayClient())
+                .Transport(t => t.UsePubSubAsOneWayClient("alluring-brewski-123456"))
                 .Start();
         }
     }
