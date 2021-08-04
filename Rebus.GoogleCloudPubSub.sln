@@ -4,15 +4,16 @@ VisualStudioVersion = 16.0.31112.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "stuff", "stuff", "{1ABDD7C1-1F8D-402D-8692-3E4B66962DE0}"
 	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
 		CHANGELOG.md = CHANGELOG.md
 		CONTRIBUTING.md = CONTRIBUTING.md
 		LICENSE.md = LICENSE.md
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rebus.GoogleCloudPubSub", "Rebus.GoogleCloudPubSub\Rebus.GoogleCloudPubSub.csproj", "{1DDC598A-1C02-4719-ADC9-25EDEC42B667}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rebus.GoogleCloudPubSub", "Rebus.GoogleCloudPubSub\Rebus.GoogleCloudPubSub.csproj", "{1DDC598A-1C02-4719-ADC9-25EDEC42B667}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rebus.GoogleCloudPubSub.Tests", "Rebus.GoogleCloudPubSub.Tests\Rebus.GoogleCloudPubSub.Tests.csproj", "{9BB7EAB9-2B22-4036-8A0A-416B378C738F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rebus.GoogleCloudPubSub.Tests", "Rebus.GoogleCloudPubSub.Tests\Rebus.GoogleCloudPubSub.Tests.csproj", "{9BB7EAB9-2B22-4036-8A0A-416B378C738F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -14,7 +14,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
         [Test]
         public async Task CanDoThis()
         {
-            var topicName = TopicName.FromProjectTopic("swift-citadel-308809", "test-topic");
+            var topicName = TopicName.FromProjectTopic("nimble-chimera-321908", "test-topic");
             var publisherClient = await PublisherClient.CreateAsync(topicName);
 
             var pubsubMessage = new PubsubMessage
