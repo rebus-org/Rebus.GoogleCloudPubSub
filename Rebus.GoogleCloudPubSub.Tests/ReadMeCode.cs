@@ -13,16 +13,16 @@ namespace Rebus.GoogleCloudPubSub.Tests
         public void Normal()
         {
             Configure.With(Using(new BuiltinHandlerActivator()))
-                .Transport(t => t.UsePubSub("alluring-brewski-123456", "your_queue"))
+                .Transport(t => t.UsePubSub(Constants.ProjectId, Constants.Receiver))
                 .Start();
         }
 
         [Test]
         public void OneWayClient()
         {
-            var bus = Configure.With(Using(new BuiltinHandlerActivator()))
-                .Transport(t => t.UsePubSubAsOneWayClient("alluring-brewski-123456"))
-                .Start();
+            Configure.With(Using(new BuiltinHandlerActivator()))
+                 .Transport(t => t.UsePubSubAsOneWayClient(Constants.ProjectId))
+                 .Start();
         }
     }
 }
