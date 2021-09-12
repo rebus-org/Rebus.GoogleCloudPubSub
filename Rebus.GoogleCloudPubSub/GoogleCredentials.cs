@@ -1,6 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using System.IO;
+using Newtonsoft.Json;
 
-namespace Rebus.GoogleCloudPubSub.Tests
+namespace Rebus.GoogleCloudPubSub
 {
     public class GoogleCredentials
     {
@@ -24,6 +26,16 @@ namespace Rebus.GoogleCloudPubSub.Tests
         public string AuthProviderX509CertUrl { get; set; }
         [JsonProperty("client_x509_cert_url")]
         public string ClientX509CertUrl { get; set; }
+
+        public static GoogleCredentials GetGoogleCredentialsFromEnvironmentVariable()
+        {
+            var configFilePath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+            if (!string.IsNullOrEmpty(configFilePath) && File.Exists(configFilePath))
+            {
+                return JsonConvert.DeserializeObject<GoogleCredentials>(File.ReadAllText(configFilePath));
+            }
+            throw new ArgumentException("Could not find any GOOGLE_APPLICATION_CREDENTIALS on path {path}", configFilePath);
+        }
     }
 
 }

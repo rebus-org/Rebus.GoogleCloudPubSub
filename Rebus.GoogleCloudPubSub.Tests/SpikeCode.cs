@@ -16,7 +16,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
         [Test, Ignore("Manual")]
         public async Task CanDoThis()
         {
-            var topicName = TopicName.FromProjectTopic(Constants.ProjectId, Constants.Receiver);
+            var topicName = TopicName.FromProjectTopic(ProjectId, Constants.Receiver);
             var publisherClient = await PublisherClient.CreateAsync(topicName);
 
             var pubsubMessage = new PubsubMessage
@@ -33,5 +33,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
             await publisherClient.PublishAsync(pubsubMessage);
 
         }
+
+        private static string ProjectId => GoogleCloudPubSub.GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
     }
 }

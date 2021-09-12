@@ -30,11 +30,11 @@ namespace Rebus.GoogleCloudPubSub.Tests
             });
 
             Configure.With(receiver)
-                .Transport(t => t.UsePubSub(Constants.ProjectId, Constants.Receiver))
+                .Transport(t => t.UsePubSub(Constants.Receiver))
                 .Start();
 
             var sender = Configure.With(Using(new BuiltinHandlerActivator()))
-                .Transport(t => t.UsePubSub(Constants.ProjectId, Constants.Sender))
+                .Transport(t => t.UsePubSub(Constants.Sender))
                 .Routing(t => t.TypeBased().Map<string>(Constants.Receiver))
                 .Start();
 
@@ -69,11 +69,11 @@ namespace Rebus.GoogleCloudPubSub.Tests
             });
 
             Configure.With(receiver)
-                .Transport(t => t.UsePubSub(Constants.ProjectId, Constants.Receiver))
+                .Transport(t => t.UsePubSub(Constants.Receiver))
                     .Start();
 
             var sender = Configure.With(Using(new BuiltinHandlerActivator()))
-                .Transport(t => t.UsePubSub(Constants.ProjectId, Constants.Sender))
+                .Transport(t => t.UsePubSub(Constants.Sender))
                 .Routing(t => t.TypeBased().Map<string>(Constants.Receiver))
                 .Start();
             w = Stopwatch.StartNew();
@@ -103,7 +103,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
 
 
             var receiverBus = Configure.With(receiver)
-                .Transport(t => t.UsePubSub(Constants.ProjectId, Constants.Receiver))
+                .Transport(t => t.UsePubSub(Constants.Receiver))
                 .Subscriptions(s => s.StoreInMemory(store))
                 .Start();
 
@@ -112,7 +112,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
             await receiverBus.Subscribe<MessageToSubscribeB>();
 
             var sender = Configure.With(Using(new BuiltinHandlerActivator()))
-                .Transport(t => t.UsePubSub(Constants.ProjectId, Constants.Sender))
+                .Transport(t => t.UsePubSub(Constants.Sender))
                 .Subscriptions(s => s.StoreInMemory(store))
                 .Routing(t => t.TypeBased().Map<string>(Constants.Receiver))
                 .Start();

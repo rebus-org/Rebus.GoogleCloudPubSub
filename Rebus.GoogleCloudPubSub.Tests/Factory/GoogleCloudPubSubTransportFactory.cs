@@ -14,7 +14,7 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
         public ITransport CreateOneWayClient()
         {
             var consoleLoggerFactory = new ConsoleLoggerFactory(false);
-            var transport = new GoogleCloudPubSubTransport(Constants.ProjectId, Constants.Receiver, consoleLoggerFactory);
+            var transport = new GoogleCloudPubSubTransport(ProjectId, Constants.Receiver, consoleLoggerFactory);
 
             _disposables.Push(transport);
 
@@ -24,7 +24,7 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
         public ITransport Create(string inputQueueAddress)
         {
             var consoleLoggerFactory = new ConsoleLoggerFactory(false);
-            var transport = new GoogleCloudPubSubTransport(Constants.ProjectId, inputQueueAddress, consoleLoggerFactory);
+            var transport = new GoogleCloudPubSubTransport(ProjectId, inputQueueAddress, consoleLoggerFactory);
             transport.PurgeQueueAsync().ConfigureAwait(false);
             transport.Initialize();
 
@@ -41,5 +41,6 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
                 disposable.Dispose();
             }
         }
+        private static string ProjectId => GoogleCloudPubSub.GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
     }
 }

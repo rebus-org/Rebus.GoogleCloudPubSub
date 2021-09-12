@@ -13,7 +13,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
         public void Normal()
         {
             Configure.With(Using(new BuiltinHandlerActivator()))
-                .Transport(t => t.UsePubSub(Constants.ProjectId, Constants.Receiver))
+                .Transport(t => t.UsePubSub(Constants.Receiver))
                 .Start();
         }
 
@@ -21,7 +21,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
         public void OneWayClient()
         {
             Configure.With(Using(new BuiltinHandlerActivator()))
-                 .Transport(t => t.UsePubSubAsOneWayClient(Constants.ProjectId))
+                 .Transport(t => t.UsePubSubAsOneWayClient())
                  .Start();
         }
     }

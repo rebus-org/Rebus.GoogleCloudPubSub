@@ -25,7 +25,7 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
             PurgeQueue(inputQueueAddress);
 
             var bus = Configure.With(builtinHandlerActivator)
-                .Transport(t => t.UsePubSub(Constants.ProjectId, inputQueueAddress))
+                .Transport(t => t.UsePubSub(inputQueueAddress))
                 .Options(o =>
                 {
                     o.SetNumberOfWorkers(10);
@@ -42,7 +42,7 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
         {
             var consoleLoggerFactory = new ConsoleLoggerFactory(false);
 
-            using var transport = new GoogleCloudPubSubTransport(Constants.ProjectId, queueName,consoleLoggerFactory);
+            using var transport = new GoogleCloudPubSubTransport(GoogleCloudPubSub.GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId, queueName,consoleLoggerFactory);
 
             transport.PurgeQueueAsync().ConfigureAwait(false);
         }
