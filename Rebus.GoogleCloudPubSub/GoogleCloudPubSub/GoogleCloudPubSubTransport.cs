@@ -20,8 +20,8 @@ namespace Rebus.GoogleCloudPubSub
 {
     public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable, IDisposable
     {
-        readonly ConcurrentDictionary<string, Lazy<Task<PublisherClient>>> _clients = new ConcurrentDictionary<string, Lazy<Task<PublisherClient>>>();
-        readonly string _projectId;
+        private readonly ConcurrentDictionary<string, Lazy<Task<PublisherClient>>> _clients = new ConcurrentDictionary<string, Lazy<Task<PublisherClient>>>();
+        private readonly string _projectId;
         private readonly string _inputQueueName;
 
         private TopicName _inputTopic;
@@ -108,7 +108,7 @@ namespace Rebus.GoogleCloudPubSub
                     {
                         await _subscriberClient.CreateSubscriptionAsync(_subscriptionName.ToString(), _inputTopic.ToString(), null, 30, null);
                         //wait after subscription is created - because some delay on google's side
-                        await Task.Delay(3000);
+                        await Task.Delay(5000);
                         Log.Info("Created subscription {sub} for topic {topic}", _subscriptionName.ToString(), _inputTopic.ToString());
                         break;
                     }

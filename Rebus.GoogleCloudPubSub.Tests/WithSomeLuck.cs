@@ -7,13 +7,31 @@ using NUnit.Framework;
 using Rebus.Activation;
 using Rebus.Config;
 using Rebus.Handlers;
+using Rebus.Logging;
 using Rebus.Persistence.InMem;
 using Rebus.Routing.TypeBased;
 using Rebus.Tests.Contracts;
 using Rebus.Tests.Contracts.Extensions;
+using Rebus.Transport;
 
 namespace Rebus.GoogleCloudPubSub.Tests
 {
+
+    public static class TestTransportConfigurer
+    {
+        public static void UsePubSubAndPurgeQueueAtStartup(this StandardConfigurer<ITransport> configurer, string inputQueueName)
+        {
+            if (configurer == null) throw new ArgumentNullException(nameof(configurer));
+            if (inputQueueName == null) throw new ArgumentNullException(nameof(inputQueueName));
+            configurer.Register(c =>
+            {
+                var googleCloudPubSubTransport = new GoogleCloudPubSubTransport(ProjectId, inputQueueName, c.Get<IRebusLoggerFactory>());
+                AsyncHelpers.RunSync(googleCloudPubSubTransport.PurgeQueueAsync);
+                return googleCloudPubSubTransport;
+            });
+        }
+        private static string ProjectId => GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
+    }
     [TestFixture]
     public class WithSomeLuck : FixtureBase
     {
@@ -47,42 +65,44 @@ namespace Rebus.GoogleCloudPubSub.Tests
             await Task.Delay(5000);
         }
 
+        static int _msgCounter;
         [Test]
         public async Task ItWillSendAndReceive100MessagesWithoutTooMuchDelay()
         {
             Stopwatch w = null;
-            int msgCounter = 0;
-            int expectedCount = 100;
+            
+            int expectedCount = 50;
             var gotTheString = Using(new ManualResetEvent(initialState: false));
             var receiver = Using(new BuiltinHandlerActivator());
 
 
             receiver.Handle<string>(async msg =>
             {
-                msgCounter++;
-                Console.WriteLine($"Got message {msgCounter} from queue: {msg}");
-                if (msgCounter == expectedCount)
+                Interlocked.Increment(ref _msgCounter);
+                Console.WriteLine($"Got message {_msgCounter} from queue: {msg}");
+                if (_msgCounter == expectedCount)
                 {
-                    Console.WriteLine($"Time spent sending and receiving {msgCounter} messages was {w.ElapsedMilliseconds} ms");
+                    Console.WriteLine($"Time spent sending and receiving {_msgCounter} messages was {w.ElapsedMilliseconds} ms");
                     gotTheString.Set();
                 }
             });
 
             Configure.With(receiver)
-                .Transport(t => t.UsePubSub(Constants.Receiver))
+                .Transport(t => t.UsePubSubAndPurgeQueueAtStartup(Constants.Receiver))
                     .Start();
 
             var sender = Configure.With(Using(new BuiltinHandlerActivator()))
-                .Transport(t => t.UsePubSub(Constants.Sender))
+                .Transport(t => t.UsePubSubAndPurgeQueueAtStartup(Constants.Sender))
                 .Routing(t => t.TypeBased().Map<string>(Constants.Receiver))
                 .Start();
+
             w = Stopwatch.StartNew();
-            for (int i = 0; i <= expectedCount; i++)
+            for (int i = 0; i < expectedCount; i++)
             {
                 await sender.Send($"Some fancy message {i} 😎");
             }
 
-            var wait = TimeSpan.FromMinutes(5);
+            var wait = TimeSpan.FromMinutes(1);
             gotTheString.WaitOrDie(
                 timeout: wait,
                 errorMessage: $"Did not receive {expectedCount} within {wait} time"
@@ -103,7 +123,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
 
 
             var receiverBus = Configure.With(receiver)
-                .Transport(t => t.UsePubSub(Constants.Receiver))
+                .Transport(t => t.UsePubSubAndPurgeQueueAtStartup(Constants.Receiver))
                 .Subscriptions(s => s.StoreInMemory(store))
                 .Start();
 
@@ -112,7 +132,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
             await receiverBus.Subscribe<MessageToSubscribeB>();
 
             var sender = Configure.With(Using(new BuiltinHandlerActivator()))
-                .Transport(t => t.UsePubSub(Constants.Sender))
+                .Transport(t => t.UsePubSubAndPurgeQueueAtStartup(Constants.Sender))
                 .Subscriptions(s => s.StoreInMemory(store))
                 .Routing(t => t.TypeBased().Map<string>(Constants.Receiver))
                 .Start();
@@ -188,7 +208,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
             {
                 _evnt.Set();
             }
-            
+
         }
     }
 }
