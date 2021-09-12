@@ -88,8 +88,6 @@ namespace Rebus.GoogleCloudPubSub
             {
                 Log.Info("Tried purging subscription {subscriptionname} by deleting it, but it could not be found", _subscriptionName.ToString());
             }
-
-
         }
 
         private async Task CreateSubscriptionAsync()
@@ -130,21 +128,20 @@ namespace Rebus.GoogleCloudPubSub
         {
             if (_subscriberClient == null) return null;
 
-            ReceivedMessage msg = null;
+            ReceivedMessage msg;
             try
             {
                 var response = await _subscriberClient.PullAsync(_subscriptionName, returnImmediately: false, maxMessages: 1, CallSettings.FromCancellationToken(cancellationToken));
                 msg = response.ReceivedMessages.FirstOrDefault();
-
             }
             catch (RpcException ex) when (ex.Status.StatusCode == StatusCode.Unavailable)
             {
-                Log.Warn("GooglePubSub UNAVAILABLE due to too many concurrent pull requests pending for the given subscription.");
+                throw new RebusApplicationException(ex, "GooglePubSub UNAVAILABLE due to too many concurrent pull requests pending for the given subscription");
+
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Log.Error(e, "Failed when fetching messages from GooglePubSub");
-                //TODO: How bad shall we fail here according to Rebus standards?
+                throw new RebusApplicationException(ex, "Failed when fetching messages from GooglePubSub");
             }
 
 
@@ -168,15 +165,9 @@ namespace Rebus.GoogleCloudPubSub
                 await _subscriberClient.ModifyAckDeadlineAsync(_subscriptionName, new[] { msg.AckId }, 0);
             });
 
-            context.OnDisposed(async ctx =>
-            {
-                //TODO:Anything?
-            });
-
-            var result = new TransportMessage(GetHeaders(msg), msg.Message.Data.ToByteArray());
-
-            return result;
+            return new TransportMessage(GetHeaders(msg), msg.Message.Data.ToByteArray());
         }
+
         Dictionary<string, string> GetHeaders(ReceivedMessage msg)
         {
             if (msg.Message.Attributes == null)
@@ -235,8 +226,6 @@ namespace Rebus.GoogleCloudPubSub
             }
 
             await Task.WhenAll(messagesByDestinationQueues.Select(g => SendMessagesToQueue(g.Key, g)));
-            //TODO:Should send be triggered by context.OnCommited?
-            // context.OnCommitted(async ctx => await Task.WhenAll(messagesByDestinationQueues.Select(g => SendMessagesToQueue(g.Key, g))));
         }
 
         async Task<PublisherClient> GetPublisherClient(string queueName)
