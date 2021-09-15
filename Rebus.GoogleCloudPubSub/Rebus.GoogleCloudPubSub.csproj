@@ -10,9 +10,4 @@
     <PackageReference Include="rebus" Version="6.5.5" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="GoogleCloudPubSub\" />
-    <Folder Include="GoogleCloudPubSub\" />
-  </ItemGroup>
-
 </Project>

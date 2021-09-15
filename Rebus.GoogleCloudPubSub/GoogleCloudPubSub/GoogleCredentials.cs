@@ -30,11 +30,18 @@ namespace Rebus.GoogleCloudPubSub
         public static GoogleCredentials GetGoogleCredentialsFromEnvironmentVariable()
         {
             var configFilePath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
-            if (!string.IsNullOrEmpty(configFilePath) && File.Exists(configFilePath))
+
+            if (string.IsNullOrEmpty(configFilePath))
             {
-                return JsonConvert.DeserializeObject<GoogleCredentials>(File.ReadAllText(configFilePath));
+                throw new ArgumentException($"Please ensure that tests are running with an environment variable named 'GOOGLE_APPLICATION_CREDENTIALS' that points to a JSON file containing appropriate Google credentials");
             }
-            throw new ArgumentException("Could not find any GOOGLE_APPLICATION_CREDENTIALS on path {path}", configFilePath);
+
+            if (!File.Exists(configFilePath))
+            {
+                throw new ArgumentException($"Could not find any GOOGLE_APPLICATION_CREDENTIALS on path {configFilePath}");
+            }
+
+            return JsonConvert.DeserializeObject<GoogleCredentials>(File.ReadAllText(configFilePath));
         }
     }
 

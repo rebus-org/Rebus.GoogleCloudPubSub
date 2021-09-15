@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Rebus.GoogleCloudPubSub.Tests": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:\\projects-rebus\\Rebus.GoogleCloudPubSub\\Rebus.GoogleCloudPubSub.Tests\\google-cloud-credentials.json"
+      }
+    }
+  }
+}

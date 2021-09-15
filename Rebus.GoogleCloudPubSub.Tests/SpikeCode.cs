@@ -34,6 +34,6 @@ namespace Rebus.GoogleCloudPubSub.Tests
 
         }
 
-        private static string ProjectId => GoogleCloudPubSub.GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
+        private static string ProjectId => GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
     }
 }

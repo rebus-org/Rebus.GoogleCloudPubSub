@@ -1,9 +1,5 @@
 ﻿using System;
-using System.IO;
-using Google.Apis.Auth.OAuth2;
-using Newtonsoft.Json;
 using Rebus.GoogleCloudPubSub;
-using Rebus.Injection;
 using Rebus.Logging;
 using Rebus.Transport;
 

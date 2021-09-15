@@ -41,6 +41,6 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
                 disposable.Dispose();
             }
         }
-        private static string ProjectId => GoogleCloudPubSub.GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
+        private static string ProjectId => GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
     }
 }

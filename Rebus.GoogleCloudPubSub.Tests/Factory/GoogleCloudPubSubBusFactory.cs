@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.VisualBasic;
 using Rebus.Activation;
 using Rebus.Bus;
 using Rebus.Config;
 using Rebus.Logging;
-using Rebus.Tests.Contracts;
 using Rebus.Tests.Contracts.Transports;
-using Rebus.Threading.TaskParallelLibrary;
 
 namespace Rebus.GoogleCloudPubSub.Tests.Factory
 {
@@ -42,9 +39,11 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
         {
             var consoleLoggerFactory = new ConsoleLoggerFactory(false);
 
-            using var transport = new GoogleCloudPubSubTransport(GoogleCloudPubSub.GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId, queueName,consoleLoggerFactory);
+            using var transport = new GoogleCloudPubSubTransport(GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId, queueName, consoleLoggerFactory);
 
-            transport.PurgeQueueAsync().ConfigureAwait(false);
+            transport.PurgeQueueAsync()
+                .GetAwaiter()
+                .GetResult();
         }
 
         public void Cleanup()
@@ -52,6 +51,5 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
             _stuffToDispose.ForEach(d => d.Dispose());
             _stuffToDispose.Clear();
         }
-
     }
 }
