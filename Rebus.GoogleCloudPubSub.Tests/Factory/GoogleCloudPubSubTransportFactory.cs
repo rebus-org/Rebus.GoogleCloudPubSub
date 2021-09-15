@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using Google.Cloud.PubSub.V1;
+using Rebus.Logging;
 using Rebus.Tests.Contracts.Transports;
 using Rebus.Transport;
 
@@ -6,19 +9,38 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
 {
     public class GoogleCloudPubSubTransportFactory : ITransportFactory
     {
+        readonly ConcurrentStack<GoogleCloudPubSubTransport> _disposables = new();
+
         public ITransport CreateOneWayClient()
         {
-            throw new NotImplementedException();
+            var consoleLoggerFactory = new ConsoleLoggerFactory(false);
+            var transport = new GoogleCloudPubSubTransport(ProjectId, Constants.Receiver, consoleLoggerFactory);
+
+            _disposables.Push(transport);
+
+            return transport;
         }
 
         public ITransport Create(string inputQueueAddress)
         {
-            throw new NotImplementedException();
+            var consoleLoggerFactory = new ConsoleLoggerFactory(false);
+            var transport = new GoogleCloudPubSubTransport(ProjectId, inputQueueAddress, consoleLoggerFactory);
+            transport.PurgeQueueAsync().ConfigureAwait(false);
+            transport.Initialize();
+
+            _disposables.Push(transport);
+
+            return transport;
         }
 
         public void CleanUp()
         {
-            throw new NotImplementedException();
+            while (_disposables.TryPop(out var disposable))
+            {
+                disposable.PurgeQueueAsync().ConfigureAwait(false);
+                disposable.Dispose();
+            }
         }
+        private static string ProjectId => GoogleCloudPubSub.GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
     }
 }
