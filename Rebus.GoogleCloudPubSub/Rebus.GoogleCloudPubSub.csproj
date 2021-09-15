@@ -3,6 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Rebus</RootNamespace>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>mookid8000</Authors>
+    <Company>Rebus FM ApS</Company>
+    <Product>Rebus</Product>
   </PropertyGroup>
 
   <ItemGroup>
