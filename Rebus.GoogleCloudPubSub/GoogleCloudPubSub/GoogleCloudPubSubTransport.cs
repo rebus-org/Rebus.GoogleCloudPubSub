@@ -128,11 +128,11 @@ namespace Rebus.GoogleCloudPubSub
         {
             if (_subscriberClient == null) return null;
 
-            ReceivedMessage msg;
+            ReceivedMessage receivedMessage;
             try
             {
                 var response = await _subscriberClient.PullAsync(_subscriptionName, returnImmediately: false, maxMessages: 1, CallSettings.FromCancellationToken(cancellationToken));
-                msg = response.ReceivedMessages.FirstOrDefault();
+                receivedMessage = response.ReceivedMessages.FirstOrDefault();
             }
             catch (RpcException ex) when (ex.Status.StatusCode == StatusCode.Unavailable)
             {
@@ -145,74 +145,36 @@ namespace Rebus.GoogleCloudPubSub
             }
 
 
-            if (msg == null) return null;
+            if (receivedMessage == null) return null;
+
+            var receivedTransportMessage = receivedMessage.ToRebusTransportMessage();
 
             var utcNow = DateTimeOffset.UtcNow;
-            if (msg.Message.IsExpired(utcNow))
+            if (receivedTransportMessage.IsExpired(utcNow))
             {
-                Log.Debug($"Discarded message {string.Join(",", msg.Message.Attributes.Select(a => a.Key + " : " + a.Value).ToArray())} because message expired {msg.Message.AbsoluteExpiryTimeUtc()} which is lesser than current time {utcNow}");
+                Log.Debug($"Discarded message {string.Join(",", receivedTransportMessage.Headers.Select(a => a.Key + " : " + a.Value).ToArray())} because message expired {receivedTransportMessage.AbsoluteExpiryTimeUtc()} which is lesser than current time {utcNow}");
                 return null;
             }
 
 
             context.OnCompleted(async ctx =>
             {
-                await _subscriberClient.AcknowledgeAsync(_subscriptionName, new[] { msg.AckId });
+                await _subscriberClient.AcknowledgeAsync(_subscriptionName, new[] { receivedMessage.AckId });
             });
 
             context.OnAborted(async ctx =>
             {
-                await _subscriberClient.ModifyAckDeadlineAsync(_subscriptionName, new[] { msg.AckId }, 0);
+                await _subscriberClient.ModifyAckDeadlineAsync(_subscriptionName, new[] { receivedMessage.AckId }, 0);
             });
 
-            return new TransportMessage(GetHeaders(msg), msg.Message.Data.ToByteArray());
+            return receivedTransportMessage;
         }
 
-        Dictionary<string, string> GetHeaders(ReceivedMessage msg)
-        {
-            if (msg.Message.Attributes == null)
-                return new Dictionary<string, string>();
-
-            var result = new Dictionary<string, string>();
-
-            foreach (var item in msg.Message.Attributes)
-            {
-                result.Add(item.Key, item.Value);
-            }
-            return result;
-        }
 
 
         protected override async Task SendOutgoingMessages(IEnumerable<OutgoingMessage> outgoingMessages, ITransactionContext context)
         {
             var messagesByDestinationQueues = outgoingMessages.GroupBy(m => m.DestinationAddress);
-
-            PubsubMessage ToPubSubMessage(OutgoingMessage message)
-            {
-                var transportMessage = message.TransportMessage;
-
-                var headers = new Dictionary<string, string>();
-                foreach (var header in transportMessage.Headers)
-                {
-                    if (header.Value?.Length > 1024)
-                    {
-                        //Max allowed attribute length is 1024
-                        Log.Warn("Truncating header with key {key} because length {length} succeeds max allowed", header.Key, header.Value);
-                        headers.Add(header.Key, new string(header.Value.Take(1024).ToArray()));
-                    }
-                    else
-                    {
-                        headers.Add(header.Key, header.Value);
-                    }
-                }
-                var body = transportMessage.Body;
-                return new PubsubMessage
-                {
-                    MessageId = headers.GetValue(Headers.MessageId),
-                    Attributes = { headers },
-                    Data = ByteString.CopyFrom(body)
-                };
-            }
 
             async Task SendMessagesToQueue(string queueName, IEnumerable<OutgoingMessage> messages)
             {
@@ -220,7 +182,7 @@ namespace Rebus.GoogleCloudPubSub
 
                 await Task.WhenAll(
                     messages
-                        .Select(ToPubSubMessage)
+                        .Select(m => m.TransportMessage.ToPubSubMessage())
                         .Select(publisherClient.PublishAsync)
                 );
             }
