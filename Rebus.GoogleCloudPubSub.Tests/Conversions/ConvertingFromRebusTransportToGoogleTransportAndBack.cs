@@ -15,17 +15,15 @@ namespace Rebus.GoogleCloudPubSub.Tests.Conversions
         public void ShouldNotAddOrRemoveAnyContent()
         {
             var theBodyContent = "SomeBodyContent";
-            var theHeaderContent = new Dictionary<string, string>() {{"xheader1", "header1content"}, { "xheader2", "header2content" },{ Headers.MessageId ,Guid.NewGuid().ToString()} };
+            var theHeaderContent = new Dictionary<string, string>() { { "xheader1", "header1content" }, { "xheader2", "header2content" }, { Headers.MessageId, Guid.NewGuid().ToString() } };
             var rebusTransportMessage = new TransportMessage(theHeaderContent, System.Text.Encoding.UTF8.GetBytes(theBodyContent));
 
             var googlePubSubMessage = rebusTransportMessage.ToPubSubMessage();
-            var received = new ReceivedMessage() {AckId = "ackid", DeliveryAttempt = 1, Message = googlePubSubMessage};
+            var received = new ReceivedMessage() { AckId = "ackid", DeliveryAttempt = 1, Message = googlePubSubMessage };
             var final = received.ToRebusTransportMessage();
 
-            Assert.AreEqual(theBodyContent,System.Text.Encoding.UTF8.GetString(final.Body));
-            CollectionAssert.AreEqual(theHeaderContent,final.Headers);
-
+            Assert.AreEqual(theBodyContent, System.Text.Encoding.UTF8.GetString(final.Body));
+            CollectionAssert.AreEqual(theHeaderContent, final.Headers);
         }
-        
     }
 }
