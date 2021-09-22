@@ -70,7 +70,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
         public async Task ItWillSendAndReceive100MessagesWithoutTooMuchDelay()
         {
             Stopwatch w = null;
-            
+
             int expectedCount = 50;
             var gotTheString = Using(new ManualResetEvent(initialState: false));
             var receiver = Using(new BuiltinHandlerActivator());
