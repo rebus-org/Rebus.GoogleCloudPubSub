@@ -128,7 +128,7 @@ namespace Rebus.GoogleCloudPubSub
         {
             if (_subscriberClient == null) return null;
 
-            ReceivedMessage receivedMessage;
+            ReceivedMessage receivedMessage = null;
             try
             {
                 var response = await _subscriberClient.PullAsync(_subscriptionName, returnImmediately: false, maxMessages: 1, CallSettings.FromCancellationToken(cancellationToken));
@@ -138,6 +138,14 @@ namespace Rebus.GoogleCloudPubSub
             {
                 throw new RebusApplicationException(ex, "GooglePubSub UNAVAILABLE due to too many concurrent pull requests pending for the given subscription");
 
+            }
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+            {
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    //Rebus has not ordered this cancellation - therefore throwing
+                    throw new RebusApplicationException(ex, "Cancelled when fetching messages from GooglePubSub");
+                }
             }
             catch (Exception ex)
             {
