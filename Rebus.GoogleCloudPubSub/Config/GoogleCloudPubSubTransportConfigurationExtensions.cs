@@ -7,19 +7,32 @@ namespace Rebus.Config
 {
     public static class GoogleCloudPubSubTransportConfigurationExtensions
     {
+        public static void UsePubSub(this StandardConfigurer<ITransport> configurer, string projectId, string inputQueueName)
+        {
+            if (configurer == null) throw new ArgumentNullException(nameof(configurer));
+            if (inputQueueName == null) throw new ArgumentNullException(nameof(inputQueueName));
+            configurer.Register(c => new GoogleCloudPubSubTransport(projectId, inputQueueName, c.Get<IRebusLoggerFactory>()));
+        }
+
+        public static void UsePubSubAsOneWayClient(this StandardConfigurer<ITransport> configurer, string projectId)
+        {
+            if (configurer == null) throw new ArgumentNullException(nameof(configurer));
+            configurer.Register(c => new GoogleCloudPubSubTransport(projectId, null, c.Get<IRebusLoggerFactory>()));
+        }
+
         public static void UsePubSub(this StandardConfigurer<ITransport> configurer, string inputQueueName)
         {
             if (configurer == null) throw new ArgumentNullException(nameof(configurer));
             if (inputQueueName == null) throw new ArgumentNullException(nameof(inputQueueName));
-            configurer.Register(c => new GoogleCloudPubSubTransport(ProjectId, inputQueueName, c.Get<IRebusLoggerFactory>()));
+            configurer.Register(c => new GoogleCloudPubSubTransport(DefaultProjectId, inputQueueName, c.Get<IRebusLoggerFactory>()));
         }
 
         public static void UsePubSubAsOneWayClient(this StandardConfigurer<ITransport> configurer)
         {
             if (configurer == null) throw new ArgumentNullException(nameof(configurer));
-            configurer.Register(c => new GoogleCloudPubSubTransport(ProjectId, null, c.Get<IRebusLoggerFactory>()));
+            configurer.Register(c => new GoogleCloudPubSubTransport(DefaultProjectId, null, c.Get<IRebusLoggerFactory>()));
         }
 
-        private static string ProjectId => GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
+        private static string DefaultProjectId => GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
     }
 }
