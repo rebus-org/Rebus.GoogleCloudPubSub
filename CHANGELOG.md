@@ -12,6 +12,9 @@
 ## 0.0.4
 * Make it possible to explicitly state which project ID to work with - thanks [asleire]
 
+## 0.0.5
+* Update Google.Cloud.PubSub.V1 to 2.5.0 - thanks [asleire]
+
 ---
 
 [asleire]: https://github.com/asleire
