@@ -131,7 +131,10 @@ namespace Rebus.GoogleCloudPubSub
             ReceivedMessage receivedMessage = null;
             try
             {
-                var response = await _subscriberClient.PullAsync(_subscriptionName, returnImmediately: false, maxMessages: 1, CallSettings.FromCancellationToken(cancellationToken));
+                var response = await _subscriberClient.PullAsync(
+                    new PullRequest() { SubscriptionAsSubscriptionName = _subscriptionName, MaxMessages = 1 },
+                    CallSettings.FromCancellationToken(cancellationToken)
+                );
                 receivedMessage = response.ReceivedMessages.FirstOrDefault();
             }
             catch (RpcException ex) when (ex.Status.StatusCode == StatusCode.Unavailable)
