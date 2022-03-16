@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
+using Google.Api.Gax;
 using Google.Cloud.PubSub.V1;
 using Google.Protobuf;
 using NUnit.Framework;
@@ -13,11 +14,12 @@ namespace Rebus.GoogleCloudPubSub.Tests
     [TestFixture]
     public class SpikeCode : GoogleCloudFixtureBase
     {
-        [Test, Ignore("Manual")]
+        [Test]
+        [Explicit]
         public async Task CanDoThis()
         {
             var topicName = TopicName.FromProjectTopic(ProjectId, Constants.Receiver);
-            var publisherClient = await PublisherClient.CreateAsync(topicName);
+            var publisherClient = await PublisherClient.CreateAsync(topicName,new PublisherClient.ClientCreationSettings().WithEmulatorDetection(EmulatorDetection.EmulatorOrProduction));
 
             var pubsubMessage = new PubsubMessage
             {

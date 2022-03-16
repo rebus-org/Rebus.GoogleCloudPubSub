@@ -33,7 +33,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
         private static string ProjectId => GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
     }
     [TestFixture]
-    public class WithSomeLuck : FixtureBase
+    public class WithSomeLuck : GoogleCloudFixtureBase
     {
         [Test]
         public async Task BasicSendReceiveTestWillSucceed()

@@ -13,9 +13,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
         protected override void SetUp()
         {
             base.SetUp();
-
-            var configurationFile = Path.Combine(AppContext.BaseDirectory, "google-cloud-credentials.json");
-            Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", configurationFile);
+            GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable();
         }
     }
 }

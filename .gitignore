@@ -28,4 +28,6 @@ _NCrunch_*
 
 # Secret stuff
 google-cloud-credentials.json
+# Jetbrains Rider
+.idea/*
 
