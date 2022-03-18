@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net;
 using System.Threading.Tasks;
 using Google.Api.Gax;
 using Google.Cloud.PubSub.V1;
@@ -35,7 +34,5 @@ namespace Rebus.GoogleCloudPubSub.Tests
             await publisherClient.PublishAsync(pubsubMessage);
 
         }
-
-        private static string ProjectId => GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
     }
 }

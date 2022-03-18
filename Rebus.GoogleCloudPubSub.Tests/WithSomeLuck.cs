@@ -30,7 +30,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
                 return googleCloudPubSubTransport;
             });
         }
-        private static string ProjectId => GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId;
+        private static string ProjectId => GoogleCredentials.GetProjectIdFromGoogleCredentials();
     }
     [TestFixture]
     public class WithSomeLuck : GoogleCloudFixtureBase
@@ -48,11 +48,11 @@ namespace Rebus.GoogleCloudPubSub.Tests
             });
 
             Configure.With(receiver)
-                .Transport(t => t.UsePubSub(Constants.Receiver))
+                .Transport(t => t.UsePubSub(ProjectId,Constants.Receiver))
                 .Start();
 
             var sender = Configure.With(Using(new BuiltinHandlerActivator()))
-                .Transport(t => t.UsePubSub(Constants.Sender))
+                .Transport(t => t.UsePubSub(ProjectId,Constants.Sender))
                 .Routing(t => t.TypeBased().Map<string>(Constants.Receiver))
                 .Start();
 

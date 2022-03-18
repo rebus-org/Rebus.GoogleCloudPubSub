@@ -11,6 +11,7 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
 {
     public class GoogleCloudPubSubBusFactory : IBusFactory
     {
+        private readonly string _projectId = GoogleCredentials.GetProjectIdFromGoogleCredentials();
         readonly List<IDisposable> _stuffToDispose = new();
 
         public IBus GetBus<TMessage>(string inputQueueAddress, Func<TMessage, Task> handler)
@@ -22,7 +23,7 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
             PurgeQueue(inputQueueAddress);
 
             var bus = Configure.With(builtinHandlerActivator)
-                .Transport(t => t.UsePubSub(inputQueueAddress))
+                .Transport(t => t.UsePubSub(_projectId,inputQueueAddress))
                 .Options(o =>
                 {
                     o.SetNumberOfWorkers(10);
@@ -35,11 +36,11 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
             return bus;
         }
 
-        static void PurgeQueue(string queueName)
+        void PurgeQueue(string queueName)
         {
             var consoleLoggerFactory = new ConsoleLoggerFactory(false);
 
-            using var transport = new GoogleCloudPubSubTransport(GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable().ProjectId, queueName, consoleLoggerFactory);
+            using var transport = new GoogleCloudPubSubTransport(_projectId, queueName, consoleLoggerFactory);
 
             transport.PurgeQueueAsync()
                 .GetAwaiter()

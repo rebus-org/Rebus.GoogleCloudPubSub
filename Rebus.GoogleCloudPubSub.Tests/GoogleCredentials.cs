@@ -1,21 +1,23 @@
 ﻿using System;
 using System.IO;
+using Google.Apis.Auth.OAuth2;
 using Newtonsoft.Json;
 
-namespace Rebus.GoogleCloudPubSub
+namespace Rebus.GoogleCloudPubSub.Tests
 {
     public class GoogleCredentials
     {
         [JsonProperty("project_id")] public string ProjectId { get; set; }
 
-        public static GoogleCredentials GetGoogleCredentialsFromEnvironmentVariable()
+        public static string GetProjectIdFromGoogleCredentials()
         {
             var emulatorHost = Environment.GetEnvironmentVariable("PUBSUB_EMULATOR_HOST");
             var projectId = Environment.GetEnvironmentVariable("PUBSUB_PROJECT_ID");
             var configFilePath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+            
             if (!string.IsNullOrEmpty(emulatorHost) && !string.IsNullOrEmpty(projectId))
             {
-                return new GoogleCredentials() { ProjectId = projectId };
+                return projectId ;
             }
 
             if (string.IsNullOrEmpty(configFilePath))
@@ -30,7 +32,7 @@ namespace Rebus.GoogleCloudPubSub
                     $"Could not find any GOOGLE_APPLICATION_CREDENTIALS on path {configFilePath}");
             }
 
-            return JsonConvert.DeserializeObject<GoogleCredentials>(File.ReadAllText(configFilePath));
+            return JsonConvert.DeserializeObject<GoogleCredentials>(File.ReadAllText(configFilePath)).ProjectId;
         }
     }
 }

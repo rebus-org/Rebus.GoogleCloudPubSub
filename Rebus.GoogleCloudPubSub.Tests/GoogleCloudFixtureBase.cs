@@ -9,11 +9,12 @@ namespace Rebus.GoogleCloudPubSub.Tests
     public abstract class GoogleCloudFixtureBase : FixtureBase
     {
         static GoogleCloudFixtureBase() => GrpcEnvironment.SetLogger(new ConsoleLogger());
+        protected readonly string ProjectId = GoogleCredentials.GetProjectIdFromGoogleCredentials();
 
         protected override void SetUp()
         {
             base.SetUp();
-            GoogleCredentials.GetGoogleCredentialsFromEnvironmentVariable();
+            GoogleCredentials.GetProjectIdFromGoogleCredentials();
         }
     }
 }
