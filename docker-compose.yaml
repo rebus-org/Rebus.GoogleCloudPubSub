@@ -10,7 +10,6 @@ services:
   tests:
     build: .
     environment:
-      - WAIT_HOSTS=pubsub:8085
       - PUBSUB_EMULATOR_HOST=pubsub:8085
       - PUBSUB_PROJECT_ID=emulator
     volumes:

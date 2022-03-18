@@ -31,3 +31,5 @@ google-cloud-credentials.json
 # Jetbrains Rider
 .idea/*
 
+#Testreports from docker-compose
+testreports/*
