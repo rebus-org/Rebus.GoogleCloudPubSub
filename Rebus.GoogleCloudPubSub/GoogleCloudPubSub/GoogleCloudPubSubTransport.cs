@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Google;
+using Google.Api.Gax;
 using Google.Api.Gax.Grpc;
 using Google.Cloud.PubSub.V1;
 using Google.Protobuf;
@@ -28,6 +29,7 @@ namespace Rebus.GoogleCloudPubSub
         private SubscriberServiceApiClient _subscriberClient;
         private SubscriptionName _subscriptionName;
         protected readonly ILog Log;
+
         public GoogleCloudPubSubTransport(string projectId, string inputQueueName, IRebusLoggerFactory rebusLoggerFactory) : base(inputQueueName)
         {
             _projectId = projectId ?? throw new ArgumentNullException(nameof(projectId));
@@ -36,9 +38,17 @@ namespace Rebus.GoogleCloudPubSub
             Log = rebusLoggerFactory.GetLogger<GoogleCloudPubSubTransport>();
         }
 
+        private async Task<PublisherServiceApiClient> GetPublisherServiceApiClientAsync()
+        {
+            return await new PublisherServiceApiClientBuilder()
+            {
+                EmulatorDetection = EmulatorDetection.EmulatorOrProduction
+            }.BuildAsync();
+        }
+
         public override void CreateQueue(string address)
         {
-            var service = PublisherServiceApiClient.Create();
+            var service = GetPublisherServiceApiClientAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             var topic = new TopicName(_projectId, address);
             try
             {
@@ -66,21 +76,19 @@ namespace Rebus.GoogleCloudPubSub
             var topic = new TopicName(_projectId, _inputQueueName);
             try
             {
-
-                var service = await PublisherServiceApiClient.CreateAsync();
+                var service = await GetPublisherServiceApiClientAsync();
                 await service.DeleteTopicAsync(topic);
                 Log.Info("Purged topic {topic} by deleting it", topic.ToString());
-
             }
             catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
             {
                 Log.Warn("Tried purging topic {topic} by deleting it, but it could not be found", topic.ToString());
             }
+
             _subscriptionName = SubscriptionName.FromProjectSubscription(_projectId, _inputQueueName);
             try
             {
-
-                _subscriberClient = await SubscriberServiceApiClient.CreateAsync();
+                _subscriberClient = await GetSubscriberServiceApiClientAsync();
                 await _subscriberClient.DeleteSubscriptionAsync(_subscriptionName);
                 Log.Info("Purged subscription {subscriptionname} by deleting it", _subscriptionName.ToString());
             }
@@ -90,10 +98,20 @@ namespace Rebus.GoogleCloudPubSub
             }
         }
 
+        private async Task<SubscriberServiceApiClient> GetSubscriberServiceApiClientAsync()
+        {
+            return await new SubscriberServiceApiClientBuilder()
+            {
+                EmulatorDetection = EmulatorDetection.EmulatorOrProduction
+            }.BuildAsync();
+        }
+
         private async Task CreateSubscriptionAsync()
         {
             _subscriptionName = SubscriptionName.FromProjectSubscription(_projectId, _inputQueueName);
-            _subscriberClient = await SubscriberServiceApiClient.CreateAsync();
+
+            _subscriberClient = await GetSubscriberServiceApiClientAsync();
+
             try
             {
                 await _subscriberClient.GetSubscriptionAsync(_subscriptionName);
@@ -208,11 +226,14 @@ namespace Rebus.GoogleCloudPubSub
                 var topicName = TopicName.FromProjectTopic(_projectId, queueName);
                 try
                 {
-                    return await PublisherClient.CreateAsync(topicName);
+                    return await PublisherClient.CreateAsync(topicName,
+                        new PublisherClient.ClientCreationSettings().WithEmulatorDetection(EmulatorDetection
+                            .EmulatorOrProduction));
                 }
                 catch (Exception exception)
                 {
-                    throw new RebusApplicationException(exception, $"Could not create publisher client for topic {topicName}");
+                    throw new RebusApplicationException(exception,
+                        $"Could not create publisher client for topic {topicName}");
                 }
             }
 

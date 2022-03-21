@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+  pubsub:
+    image: fardog/gcloud-pubsub-emulator
+    entrypoint: ["/google-cloud-sdk/platform/pubsub-emulator/bin/cloud-pubsub-emulator", "--host=0.0.0.0", "--port=8085", "--project=dummypubsubproject"]
+    ports:
+      - '8085:8085'
+
+  tests:
+    build: .
+    environment:
+      - PUBSUB_EMULATOR_HOST=pubsub:8085
+      - PUBSUB_PROJECT_ID=emulator
+    volumes:
+      - ./:/tmp/testresults.host
+    depends_on:
+      - pubsub
