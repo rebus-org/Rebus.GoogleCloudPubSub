@@ -15,6 +15,9 @@
 ## 0.0.5
 * Update Google.Cloud.PubSub.V1 to 2.5.0 - thanks [asleire]
 
+## 0.0.6
+* Add support for running Rebus.GoogleCloudPubSub against local emulator - thanks [torangel]
+
 ---
 
 [asleire]: https://github.com/asleire
