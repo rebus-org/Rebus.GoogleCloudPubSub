@@ -1,5 +1,4 @@
 ﻿using System;
-using Google.Apis.Auth.OAuth2;
 using Rebus.GoogleCloudPubSub;
 using Rebus.Logging;
 using Rebus.Transport;

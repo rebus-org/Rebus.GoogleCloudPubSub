@@ -4,15 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Google;
 using Google.Api.Gax;
 using Google.Api.Gax.Grpc;
 using Google.Cloud.PubSub.V1;
-using Google.Protobuf;
 using Grpc.Core;
 using Rebus.Bus;
 using Rebus.Exceptions;
-using Rebus.Extensions;
 using Rebus.Logging;
 using Rebus.Messages;
 using Rebus.Transport;
@@ -226,9 +223,11 @@ namespace Rebus.GoogleCloudPubSub
                 var topicName = TopicName.FromProjectTopic(_projectId, queueName);
                 try
                 {
-                    return await PublisherClient.CreateAsync(topicName,
-                        new PublisherClient.ClientCreationSettings().WithEmulatorDetection(EmulatorDetection
-                            .EmulatorOrProduction));
+                    return await new PublisherClientBuilder
+                    {
+                        TopicName = topicName,
+                        EmulatorDetection = EmulatorDetection.EmulatorOrProduction,
+                    }.BuildAsync();
                 }
                 catch (Exception exception)
                 {

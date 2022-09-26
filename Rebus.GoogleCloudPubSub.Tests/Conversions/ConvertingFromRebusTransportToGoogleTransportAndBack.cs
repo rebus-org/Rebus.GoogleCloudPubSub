@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Google.Cloud.PubSub.V1;
 using NUnit.Framework;
 using Rebus.Messages;
-using Rebus.Sagas.Idempotent;
 
 namespace Rebus.GoogleCloudPubSub.Tests.Conversions
 {

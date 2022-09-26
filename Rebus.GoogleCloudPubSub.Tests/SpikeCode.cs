@@ -18,7 +18,11 @@ namespace Rebus.GoogleCloudPubSub.Tests
         public async Task CanDoThis()
         {
             var topicName = TopicName.FromProjectTopic(ProjectId, Constants.Receiver);
-            var publisherClient = await PublisherClient.CreateAsync(topicName,new PublisherClient.ClientCreationSettings().WithEmulatorDetection(EmulatorDetection.EmulatorOrProduction));
+            var publisherClient = await new PublisherClientBuilder
+            {
+                TopicName = topicName,
+                EmulatorDetection = EmulatorDetection.EmulatorOrProduction,
+            }.BuildAsync();
 
             var pubsubMessage = new PubsubMessage
             {

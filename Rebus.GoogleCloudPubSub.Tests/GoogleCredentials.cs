@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using Google.Apis.Auth.OAuth2;
 using Newtonsoft.Json;
 
 namespace Rebus.GoogleCloudPubSub.Tests
