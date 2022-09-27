@@ -5,7 +5,6 @@ using Google.Protobuf;
 using Newtonsoft.Json;
 using Rebus.Extensions;
 using Rebus.Messages;
-using Rebus.Transport;
 
 namespace Rebus.GoogleCloudPubSub
 {

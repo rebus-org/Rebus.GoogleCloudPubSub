@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using Google.Cloud.PubSub.V1;
+﻿using System.Collections.Concurrent;
 using Rebus.Logging;
 using Rebus.Tests.Contracts.Transports;
 using Rebus.Transport;

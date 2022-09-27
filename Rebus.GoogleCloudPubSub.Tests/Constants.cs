@@ -1,8 +1,4 @@
-﻿using System;
-using System.IO;
-using Newtonsoft.Json;
-
-namespace Rebus.GoogleCloudPubSub.Tests
+﻿namespace Rebus.GoogleCloudPubSub.Tests
 {
     public static class Constants
     {
