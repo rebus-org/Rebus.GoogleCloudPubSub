@@ -1,16 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.2.0" />
-    <PackageReference Include="microsoft.net.test.sdk" Version="16.9.1" />
-    <PackageReference Include="nunit" Version="3.13.1" />
-    <PackageReference Include="nunit3testadapter" Version="3.17.0" />
-    <PackageReference Include="rebus.tests.contracts" Version="6.4.0" />
-    <PackageReference Include="JunitXml.TestLogger" Version="2.1.81" />
+    <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.4.0" />
+    <PackageReference Include="microsoft.net.test.sdk" Version="17.5.0" />
+    <PackageReference Include="nunit" Version="3.13.3" />
+    <PackageReference Include="nunit3testadapter" Version="4.4.2" />
+    <PackageReference Include="rebus.tests.contracts" Version="8.0.0-alpha01" />
+    <PackageReference Include="JunitXml.TestLogger" Version="3.0.124" />
   </ItemGroup>
 
   <ItemGroup>

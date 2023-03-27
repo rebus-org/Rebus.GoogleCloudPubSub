@@ -1,17 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <RootNamespace>Rebus</RootNamespace>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Authors>mookid8000</Authors>
-    <Company>Rebus FM ApS</Company>
-    <Product>Rebus</Product>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<LangVersion>11</LangVersion>
+		<RootNamespace>Rebus</RootNamespace>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<Authors>mookid8000</Authors>
+		<Company>Rebus FM ApS</Company>
+		<Product>Rebus</Product>
+		<PackageIcon>little_rebusbus2_copy-500x500.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Google.Cloud.PubSub.V1" Version="3.2.0" />
-    <PackageReference Include="rebus" Version="6.5.5" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="..\artwork\little_rebusbus2_copy-500x500.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Google.Cloud.PubSub.V1" Version="3.4.0" />
+		<PackageReference Include="rebus" Version="8.0.0-alpha01" />
+	</ItemGroup>
 
 </Project>

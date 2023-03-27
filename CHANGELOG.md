@@ -21,6 +21,9 @@
 ## 0.0.7
 * Update Google.Cloud.PubSub.V1 to 3.2.0 - thanks [asleire]
 
+## 0.0.8-alpha01
+* Update to Rebus 8
+
 ---
 
 [asleire]: https://github.com/asleire

@@ -10,5 +10,7 @@ before_build:
   - appveyor-retry dotnet restore -v Minimal
 
 build_script:
-  - dotnet build Rebus.GoogleCloudPubSub -c Release 
-  - dotnet build Rebus.GoogleCloudPubSub.Tests -c Release 
+  - dotnet build -c Release --no-restore
+
+test_script:
+  - dotnet test -c Release --no-restore

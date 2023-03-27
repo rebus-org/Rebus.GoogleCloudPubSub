@@ -18,7 +18,7 @@ namespace Rebus.GoogleCloudPubSub
 {
     public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable, IDisposable
     {
-        private readonly ConcurrentDictionary<string, Lazy<Task<PublisherClient>>> _clients = new ConcurrentDictionary<string, Lazy<Task<PublisherClient>>>();
+        private readonly ConcurrentDictionary<string, Lazy<Task<PublisherClient>>> _clients = new();
         private readonly string _projectId;
         private readonly string _inputQueueName;
 
@@ -183,12 +183,12 @@ namespace Rebus.GoogleCloudPubSub
             }
 
 
-            context.OnCompleted(async ctx =>
+            context.OnAck(async ctx =>
             {
                 await _subscriberClient.AcknowledgeAsync(_subscriptionName, new[] { receivedMessage.AckId });
             });
 
-            context.OnAborted(async ctx =>
+            context.OnNack(async ctx =>
             {
                 await _subscriberClient.ModifyAckDeadlineAsync(_subscriptionName, new[] { receivedMessage.AckId }, 0);
             });
@@ -196,13 +196,11 @@ namespace Rebus.GoogleCloudPubSub
             return receivedTransportMessage;
         }
 
-
-
-        protected override async Task SendOutgoingMessages(IEnumerable<OutgoingMessage> outgoingMessages, ITransactionContext context)
+        protected override async Task SendOutgoingMessages(IEnumerable<OutgoingTransportMessage> outgoingMessages, ITransactionContext context)
         {
             var messagesByDestinationQueues = outgoingMessages.GroupBy(m => m.DestinationAddress);
 
-            async Task SendMessagesToQueue(string queueName, IEnumerable<OutgoingMessage> messages)
+            async Task SendMessagesToQueue(string queueName, IEnumerable<OutgoingTransportMessage> messages)
             {
                 var publisherClient = await GetPublisherClient(queueName);
 
