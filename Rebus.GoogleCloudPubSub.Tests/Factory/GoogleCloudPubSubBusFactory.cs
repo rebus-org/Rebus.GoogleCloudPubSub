@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Rebus.Activation;
 using Rebus.Bus;
 using Rebus.Config;
+using Rebus.GoogleCloudPubSub.Messages;
 using Rebus.Logging;
 using Rebus.Tests.Contracts.Transports;
 
@@ -40,7 +41,7 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
         {
             var consoleLoggerFactory = new ConsoleLoggerFactory(false);
 
-            using var transport = new GoogleCloudPubSubTransport(_projectId, queueName, consoleLoggerFactory);
+            using var transport = new GoogleCloudPubSubTransport(_projectId, queueName, consoleLoggerFactory, new DefaultMessageConverter());
 
             transport.PurgeQueueAsync()
                 .GetAwaiter()

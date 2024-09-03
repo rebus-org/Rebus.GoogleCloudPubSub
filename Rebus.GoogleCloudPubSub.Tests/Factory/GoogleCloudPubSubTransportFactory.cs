@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Rebus.GoogleCloudPubSub.Messages;
 using Rebus.Logging;
 using Rebus.Tests.Contracts.Transports;
 using Rebus.Transport;
@@ -12,7 +13,7 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
         public ITransport CreateOneWayClient()
         {
             var consoleLoggerFactory = new ConsoleLoggerFactory(false);
-            var transport = new GoogleCloudPubSubTransport(ProjectId, Constants.Receiver, consoleLoggerFactory);
+            var transport = new GoogleCloudPubSubTransport(ProjectId, Constants.Receiver, consoleLoggerFactory, new DefaultMessageConverter());
 
             _disposables.Push(transport);
 
@@ -22,7 +23,7 @@ namespace Rebus.GoogleCloudPubSub.Tests.Factory
         public ITransport Create(string inputQueueAddress)
         {
             var consoleLoggerFactory = new ConsoleLoggerFactory(false);
-            var transport = new GoogleCloudPubSubTransport(ProjectId, inputQueueAddress, consoleLoggerFactory);
+            var transport = new GoogleCloudPubSubTransport(ProjectId, inputQueueAddress, consoleLoggerFactory, new DefaultMessageConverter());
             transport.PurgeQueueAsync().ConfigureAwait(false);
             transport.Initialize();
 

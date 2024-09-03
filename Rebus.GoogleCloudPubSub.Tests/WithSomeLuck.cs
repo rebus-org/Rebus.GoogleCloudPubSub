@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using Rebus.Activation;
 using Rebus.Config;
+using Rebus.GoogleCloudPubSub.Messages;
 using Rebus.Handlers;
 using Rebus.Logging;
 using Rebus.Persistence.InMem;
@@ -23,7 +24,7 @@ namespace Rebus.GoogleCloudPubSub.Tests
             if (inputQueueName == null) throw new ArgumentNullException(nameof(inputQueueName));
             configurer.Register(c =>
             {
-                var googleCloudPubSubTransport = new GoogleCloudPubSubTransport(ProjectId, inputQueueName, c.Get<IRebusLoggerFactory>());
+                var googleCloudPubSubTransport = new GoogleCloudPubSubTransport(ProjectId, inputQueueName, c.Get<IRebusLoggerFactory>(), new DefaultMessageConverter());
                 AsyncHelpers.RunSync(googleCloudPubSubTransport.PurgeQueueAsync);
                 return googleCloudPubSubTransport;
             });
@@ -47,10 +48,13 @@ namespace Rebus.GoogleCloudPubSub.Tests
 
             Configure.With(receiver)
                 .Transport(t => t.UsePubSub(ProjectId,Constants.Receiver))
+                .Options(o => o.Decorate<IMessageConverter>(c => new DefaultMessageConverter()))
                 .Start();
 
             var sender = Configure.With(Using(new BuiltinHandlerActivator()))
                 .Transport(t => t.UsePubSub(ProjectId,Constants.Sender))
+                .Options(o => o.Decorate<IMessageConverter>(c => new DefaultMessageConverter()))
+
                 .Routing(t => t.TypeBased().Map<string>(Constants.Receiver))
                 .Start();
 

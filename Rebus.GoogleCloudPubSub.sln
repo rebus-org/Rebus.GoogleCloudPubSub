@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "stuff", "stuff", "{1ABDD7C1
 		CONTRIBUTING.md = CONTRIBUTING.md
 		LICENSE.md = LICENSE.md
 		README.md = README.md
+		docker-compose.yaml = docker-compose.yaml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rebus.GoogleCloudPubSub", "Rebus.GoogleCloudPubSub\Rebus.GoogleCloudPubSub.csproj", "{1DDC598A-1C02-4719-ADC9-25EDEC42B667}"
