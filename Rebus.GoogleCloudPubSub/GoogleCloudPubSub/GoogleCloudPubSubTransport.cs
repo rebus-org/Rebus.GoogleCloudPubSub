@@ -13,6 +13,7 @@ using Rebus.Exceptions;
 using Rebus.GoogleCloudPubSub.Messages;
 using Rebus.Logging;
 using Rebus.Messages;
+using Rebus.Threading;
 using Rebus.Transport;
 
 namespace Rebus.GoogleCloudPubSub;
@@ -21,16 +22,20 @@ public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable
 {
     private readonly ConcurrentDictionary<string, Lazy<Task<PublisherClient>>> _clients = new();
     private readonly string _inputQueueName;
+    private IAsyncTask _leaseRenewalTimer;
+    private readonly ConcurrentDictionary<string, MessageLeaseRenewer> _leaseRenewers = new();
     private readonly IMessageConverter _messageConverter;
+    private readonly IAsyncTaskFactory _asyncTaskFactory;
     private readonly string _projectId;
     protected readonly ILog Log;
 
     private TopicName _inputTopic;
     private SubscriberServiceApiClient _subscriberClient;
     private SubscriptionName _subscriptionName;
-
+    private Subscription _subscription;
 
     public GoogleCloudPubSubTransport(string projectId, string inputQueueName, IRebusLoggerFactory rebusLoggerFactory,
+        IAsyncTaskFactory asyncTaskFactory,
         IMessageConverter messageConverter) : base(inputQueueName)
     {
         _projectId = projectId ?? throw new ArgumentNullException(nameof(projectId));
@@ -38,10 +43,12 @@ public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable
         if (rebusLoggerFactory == null) throw new ArgumentNullException(nameof(rebusLoggerFactory));
         Log = rebusLoggerFactory.GetLogger<GoogleCloudPubSubTransport>();
         _messageConverter = messageConverter ?? throw new ArgumentNullException(nameof(messageConverter));
+        _asyncTaskFactory = asyncTaskFactory ?? throw new ArgumentNullException(nameof(asyncTaskFactory));
     }
 
     public void Dispose()
     {
+        _leaseRenewalTimer?.Dispose();
     }
 
     public void Initialize()
@@ -51,7 +58,46 @@ public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable
             _inputTopic = new TopicName(_projectId, _inputQueueName);
             CreateQueue(_inputQueueName);
             AsyncHelpers.RunSync(CreateSubscriptionAsync);
+            SetupLeaseRenewalTimer(_subscription.AckDeadlineSeconds);
         }
+        
+    }
+
+    private void SetupLeaseRenewalTimer(int ackDeadlineSeconds)
+    {
+        var renewIntervalSeconds = ackDeadlineSeconds / 2;
+        _leaseRenewalTimer = _asyncTaskFactory.Create("Lease Renewal", RenewLeases, true, renewIntervalSeconds);
+        _leaseRenewalTimer.Start();
+    }
+
+    private async Task RenewLeases()
+    {
+        var leaseRenewer = _leaseRenewers
+            .Where(r => r.Value.IsDue)
+            .Select(kvp => kvp.Value)
+            .ToList();
+
+        if (!leaseRenewer.Any()) return;
+
+        Log.Debug("Identified {count} message leases that are due for renewal to prevent expiration",
+            leaseRenewer.Count);
+
+        await Task.WhenAll(leaseRenewer.Select(async messageLeaseRenewer =>
+        {
+            try
+            {
+                await messageLeaseRenewer.RenewAsync().ConfigureAwait(false);
+
+                Log.Debug("Successfully renewed lease for message with ID {messageId}", messageLeaseRenewer.MessageId);
+            }
+            catch (Exception ex)
+            {
+                if (!_leaseRenewers.ContainsKey(messageLeaseRenewer.ReceivedMessage.Message.MessageId)) return;
+
+                Log.Warn(ex, "Error when renewing lease for message with ID {messageId}",
+                    messageLeaseRenewer.MessageId);
+            }
+        }));
     }
 
     private async Task<PublisherServiceApiClient> GetPublisherServiceApiClientAsync()
@@ -121,19 +167,20 @@ public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable
 
         try
         {
-            await _subscriberClient.GetSubscriptionAsync(_subscriptionName);
+            _subscription = await _subscriberClient.GetSubscriptionAsync(_subscriptionName);
         }
         catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
         {
             var retries = 0;
-            var maxRetries = 10;
+            var maxRetries = 100;
             while (retries < maxRetries)
                 try
                 {
                     await _subscriberClient.CreateSubscriptionAsync(_subscriptionName.ToString(),
                         _inputTopic.ToString(), null, 30);
+                    _subscription = await _subscriberClient.GetSubscriptionAsync(_subscriptionName);
                     //wait after subscription is created - because some delay on google's side
-                    await Task.Delay(5000);
+                    await Task.Delay(2500);
                     Log.Info("Created subscription {sub} for topic {topic}", _subscriptionName.ToString(),
                         _inputTopic.ToString());
                     break;
@@ -145,7 +192,6 @@ public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable
                     retries++;
                     if (retries == maxRetries)
                         throw new RebusApplicationException($"Could not create subscription topic {_inputTopic}");
-                    await Task.Delay(1000 * retries);
                 }
         }
     }
@@ -193,15 +239,19 @@ public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable
             return null;
         }
 
+        var leaseRenewer = new MessageLeaseRenewer(receivedMessage, _subscriberClient, _subscriptionName, _subscription.AckDeadlineSeconds);
+        _leaseRenewers.TryAdd(receivedMessage.Message.MessageId, leaseRenewer);
 
         context.OnAck(async ctx =>
         {
             await _subscriberClient.AcknowledgeAsync(_subscriptionName, new[] { receivedMessage.AckId });
+            _leaseRenewers.TryRemove(receivedMessage.Message.MessageId, out _);
         });
 
         context.OnNack(async ctx =>
         {
             await _subscriberClient.ModifyAckDeadlineAsync(_subscriptionName, new[] { receivedMessage.AckId }, 0);
+            _leaseRenewers.TryRemove(receivedMessage.Message.MessageId, out _);
         });
 
         return receivedTransportMessage;

@@ -2,6 +2,7 @@
 using Rebus.GoogleCloudPubSub;
 using Rebus.GoogleCloudPubSub.Messages;
 using Rebus.Logging;
+using Rebus.Threading;
 using Rebus.Transport;
 
 namespace Rebus.Config;
@@ -14,8 +15,8 @@ public static class GoogleCloudPubSubTransportConfigurationExtensions
         if (configurer == null) throw new ArgumentNullException(nameof(configurer));
         if (inputQueueName == null) throw new ArgumentNullException(nameof(inputQueueName));
         configurer.Register(c => new GoogleCloudPubSubTransport(projectId, inputQueueName,
-            c.Get<IRebusLoggerFactory>(), c.Get<IMessageConverter>()));
-        
+            c.Get<IRebusLoggerFactory>(), c.Get<IAsyncTaskFactory>(), c.Get<IMessageConverter>()));
+
         configurer.OtherService<IMessageConverter>().Register(c => new DefaultMessageConverter());
     }
 
@@ -23,9 +24,9 @@ public static class GoogleCloudPubSubTransportConfigurationExtensions
     {
         if (configurer == null) throw new ArgumentNullException(nameof(configurer));
         configurer.Register(c =>
-            new GoogleCloudPubSubTransport(projectId, null, c.Get<IRebusLoggerFactory>(),
+            new GoogleCloudPubSubTransport(projectId, null, c.Get<IRebusLoggerFactory>(), c.Get<IAsyncTaskFactory>(),
                 c.Get<IMessageConverter>()));
-        
+
         configurer.OtherService<IMessageConverter>().Register(c => new DefaultMessageConverter());
     }
 }
