@@ -24,7 +24,12 @@
 ## 0.0.8
 * Update to Rebus 8
 
+## 0.0.9
+* Make message converter configurable, thus enabling different wire-level formats - thanks [goliveiracod]
+
+
 ---
 
 [asleire]: https://github.com/asleire
+[goliveiracod]: https://github.com/goliveiracod
 [torangel]: https://github.com/torangel
