@@ -28,7 +28,7 @@ public static class TestTransportConfigurer
         configurer.Register(c =>
         {
             var googleCloudPubSubTransport = new GoogleCloudPubSubTransport(ProjectId, inputQueueName,
-                c.Get<IRebusLoggerFactory>(), c.Get<IAsyncTaskFactory>(), new DefaultMessageConverter());
+                c.Get<IRebusLoggerFactory>(), c.Get<IAsyncTaskFactory>(), new DefaultMessageConverter(), new GoogleCloudPubSubTransportSettings());
             AsyncHelpers.RunSync(googleCloudPubSubTransport.PurgeQueueAsync);
             return googleCloudPubSubTransport;
         });
@@ -52,12 +52,10 @@ public class WithSomeLuck : GoogleCloudFixtureBase
 
         Configure.With(receiver)
             .Transport(t => t.UsePubSub(ProjectId, Constants.Receiver))
-            .Options(o => o.Decorate<IMessageConverter>(c => new DefaultMessageConverter()))
             .Start();
 
         var sender = Configure.With(Using(new BuiltinHandlerActivator()))
             .Transport(t => t.UsePubSub(ProjectId, Constants.Sender))
-            .Options(o => o.Decorate<IMessageConverter>(c => new DefaultMessageConverter()))
             .Routing(t => t.TypeBased().Map<string>(Constants.Receiver))
             .Start();
 

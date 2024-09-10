@@ -25,7 +25,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Google.Cloud.PubSub.V1" Version="3.16.0" />
-		<PackageReference Include="rebus" Version="8.0.1" />
+		<PackageReference Include="rebus" Version="8.4.0" />
 	</ItemGroup>
 
 </Project>

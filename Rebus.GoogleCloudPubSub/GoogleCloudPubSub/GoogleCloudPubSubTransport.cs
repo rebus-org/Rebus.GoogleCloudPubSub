@@ -9,6 +9,7 @@ using Google.Api.Gax.Grpc;
 using Google.Cloud.PubSub.V1;
 using Grpc.Core;
 using Rebus.Bus;
+using Rebus.Config;
 using Rebus.Exceptions;
 using Rebus.GoogleCloudPubSub.Messages;
 using Rebus.Logging;
@@ -21,30 +22,43 @@ namespace Rebus.GoogleCloudPubSub;
 public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable, IDisposable
 {
     private readonly ConcurrentDictionary<string, Lazy<Task<PublisherClient>>> _clients = new();
-    private readonly string _inputQueueName;
     private IAsyncTask _leaseRenewalTimer;
     private readonly ConcurrentDictionary<string, MessageLeaseRenewer> _leaseRenewers = new();
     private readonly IMessageConverter _messageConverter;
     private readonly IAsyncTaskFactory _asyncTaskFactory;
+    
+    private readonly GoogleCloudPubSubTransportSettings _googleCloudPubSubTransportSettings;
     private readonly string _projectId;
     protected readonly ILog Log;
+    
+    private readonly SubscriberServiceApiClient _googlePubSubscriberServiceApiClient;
+    
+    private readonly TopicName _googlePubSubTopicName;
+    private readonly SubscriptionName _googlePubSubSubscriptionName;
 
-    private TopicName _inputTopic;
-    private SubscriberServiceApiClient _subscriberClient;
-    private SubscriptionName _subscriptionName;
-    private Subscription _subscription;
-
-    public GoogleCloudPubSubTransport(string projectId, string inputQueueName, IRebusLoggerFactory rebusLoggerFactory,
+    public GoogleCloudPubSubTransport(string projectId, string queueName, IRebusLoggerFactory rebusLoggerFactory,
         IAsyncTaskFactory asyncTaskFactory,
-        IMessageConverter messageConverter) : base(inputQueueName)
+        IMessageConverter messageConverter,
+        GoogleCloudPubSubTransportSettings googleCloudPubSubTransportSettings) : base(
+        GetResourcesName(queueName).topic)
     {
         _projectId = projectId ?? throw new ArgumentNullException(nameof(projectId));
-        _inputQueueName = inputQueueName;
+        
+        if (queueName != null)
+        {
+            var (topic, subscription) = GetResourcesName(queueName);
+            _googlePubSubTopicName = new TopicName(_projectId, topic);
+            _googlePubSubSubscriptionName = new SubscriptionName(_projectId, subscription);
+            _googlePubSubscriberServiceApiClient = GetSubscriberServiceApiClientAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
         if (rebusLoggerFactory == null) throw new ArgumentNullException(nameof(rebusLoggerFactory));
         Log = rebusLoggerFactory.GetLogger<GoogleCloudPubSubTransport>();
         _messageConverter = messageConverter ?? throw new ArgumentNullException(nameof(messageConverter));
         _asyncTaskFactory = asyncTaskFactory ?? throw new ArgumentNullException(nameof(asyncTaskFactory));
+        _googleCloudPubSubTransportSettings = googleCloudPubSubTransportSettings;
     }
+
 
     public void Dispose()
     {
@@ -53,21 +67,35 @@ public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable
 
     public void Initialize()
     {
-        if (!string.IsNullOrEmpty(_inputQueueName))
-        {
-            _inputTopic = new TopicName(_projectId, _inputQueueName);
-            CreateQueue(_inputQueueName);
-            AsyncHelpers.RunSync(CreateSubscriptionAsync);
-            SetupLeaseRenewalTimer(_subscription.AckDeadlineSeconds);
-        }
+        if (string.IsNullOrEmpty(Address)) return;
         
+        CreateQueue(Address);
+        AsyncHelpers.RunSync(CreateSubscriptionAsync);
+        
+        if (_googleCloudPubSubTransportSettings.AutomaticLeaseRenewalEnabled)
+        {
+            SetupLeaseRenewalTimer(_googleCloudPubSubTransportSettings.AckDeadlineSeconds);
+        }
     }
 
     private void SetupLeaseRenewalTimer(int ackDeadlineSeconds)
     {
         var renewIntervalSeconds = ackDeadlineSeconds / 2;
         _leaseRenewalTimer = _asyncTaskFactory.Create("Lease Renewal", RenewLeases, true, renewIntervalSeconds);
+
         _leaseRenewalTimer.Start();
+    }
+
+    private static (string topic, string subscription) GetResourcesName(string address)
+    {
+        if (string.IsNullOrEmpty(address))
+            return (address, address);
+
+        if (!address.Contains(":")) return (address, address);
+
+        var parts = address.Split(':');
+
+        return (parts[0], parts[1]);
     }
 
     private async Task RenewLeases()
@@ -110,44 +138,74 @@ public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable
 
     public override void CreateQueue(string address)
     {
-        var service = GetPublisherServiceApiClientAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-        var topic = new TopicName(_projectId, address);
+        if (_googleCloudPubSubTransportSettings.SkipResourceCreationEnabled)
+        {
+            Log.Info(
+                "Transport configured to not create resources - skipping existence check and potential creation for topic {address}",
+                address);
+            return;
+        }
+
+        Log.Info("Creating topic {topic}", address);
+        
+        var publisherServiceApiClient = GetPublisherServiceApiClientAsync()
+            .ConfigureAwait(false)
+            .GetAwaiter()
+            .GetResult();
+        
         try
         {
-            service.GetTopic(topic);
+            publisherServiceApiClient.GetTopic(_googlePubSubTopicName);
         }
         catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
         {
-            service.CreateTopic(topic);
-            Log.Info("Created topic {topic} ", _inputTopic);
+            var retries = 0;
+            const int maxRetries = 100;
+            while (retries < maxRetries)
+            {
+                try
+                {
+                    publisherServiceApiClient.CreateTopic(_googlePubSubTopicName);
+                    Task.Delay(5000).GetAwaiter().GetResult();
+                    Log.Info("Created topic {topic} ", _googlePubSubTopicName);
+                    break;
+                }
+                catch (Exception e)
+                {
+                    Log.Warn(e,"Failed creating topic {topic} {times}", 
+                        _googlePubSubTopicName.ToString(), retries + 1);
+                    retries++;
+                    if (retries == maxRetries)
+                        throw new RebusApplicationException($"Could not create topic {_googlePubSubTopicName}");
+                }
+            }
+                
+            
         }
     }
 
     public async Task PurgeQueueAsync()
     {
-        var topic = new TopicName(_projectId, _inputQueueName);
         try
         {
-            var service = await GetPublisherServiceApiClientAsync();
-            await service.DeleteTopicAsync(topic);
-            Log.Info("Purged topic {topic} by deleting it", topic.ToString());
+            var publisherServiceApiClient = await GetPublisherServiceApiClientAsync();
+            await publisherServiceApiClient.DeleteTopicAsync(_googlePubSubTopicName);
+            Log.Info("Purged topic {topic} by deleting it", _googlePubSubTopicName.ToString());
         }
         catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
         {
-            Log.Warn("Tried purging topic {topic} by deleting it, but it could not be found", topic.ToString());
+            Log.Warn("Tried purging topic {topic} by deleting it, but it could not be found", _googlePubSubTopicName.ToString());
         }
-
-        _subscriptionName = SubscriptionName.FromProjectSubscription(_projectId, _inputQueueName);
+        
         try
         {
-            _subscriberClient = await GetSubscriberServiceApiClientAsync();
-            await _subscriberClient.DeleteSubscriptionAsync(_subscriptionName);
-            Log.Info("Purged subscription {subscriptionname} by deleting it", _subscriptionName.ToString());
+            await _googlePubSubscriberServiceApiClient.DeleteSubscriptionAsync(_googlePubSubSubscriptionName);
+            Log.Info("Purged subscription {subscriptionName} by deleting it", _googlePubSubSubscriptionName.ToString());
         }
         catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
         {
-            Log.Info("Tried purging subscription {subscriptionname} by deleting it, but it could not be found",
-                _subscriptionName.ToString());
+            Log.Info("Tried purging subscription {subscriptionName} by deleting it, but it could not be found",
+                _googlePubSubSubscriptionName.ToString());
         }
     }
 
@@ -161,37 +219,44 @@ public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable
 
     private async Task CreateSubscriptionAsync()
     {
-        _subscriptionName = SubscriptionName.FromProjectSubscription(_projectId, _inputQueueName);
-
-        _subscriberClient = await GetSubscriberServiceApiClientAsync();
-
+        if (_googleCloudPubSubTransportSettings.SkipResourceCreationEnabled)
+        {
+            Log.Info(
+                "Transport configured to not create resources - skipping existence check and potential creation for subscription {subscription}",
+                _googlePubSubSubscriptionName);
+            return;
+        }
+        
         try
         {
-            _subscription = await _subscriberClient.GetSubscriptionAsync(_subscriptionName);
+            await _googlePubSubscriberServiceApiClient.GetSubscriptionAsync(_googlePubSubSubscriptionName);
         }
         catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
         {
+            Log.Info("Creating subscription {subscription} for topic {topic}", _googlePubSubSubscriptionName, _googlePubSubTopicName);
             var retries = 0;
-            var maxRetries = 100;
+            const int maxRetries = 100;
             while (retries < maxRetries)
                 try
                 {
-                    await _subscriberClient.CreateSubscriptionAsync(_subscriptionName.ToString(),
-                        _inputTopic.ToString(), null, 30);
-                    _subscription = await _subscriberClient.GetSubscriptionAsync(_subscriptionName);
-                    //wait after subscription is created - because some delay on google's side
-                    await Task.Delay(2500);
-                    Log.Info("Created subscription {sub} for topic {topic}", _subscriptionName.ToString(),
-                        _inputTopic.ToString());
+                    await _googlePubSubscriberServiceApiClient.CreateSubscriptionAsync(_googlePubSubSubscriptionName.ToString(),
+                        _googlePubSubTopicName.ToString(), null, _googleCloudPubSubTransportSettings.AckDeadlineSeconds); 
+                    
+                    await Task.Delay(5000);
+                   
+                    await _googlePubSubscriberServiceApiClient.GetSubscriptionAsync(_googlePubSubSubscriptionName.ToString());
+
+                    Log.Info("Created subscription {sub} for topic {topic}", _googlePubSubSubscriptionName.ToString(),
+                        _googlePubSubTopicName.ToString());
                     break;
                 }
                 catch (RpcException ex1) when (ex1.StatusCode == StatusCode.NotFound)
                 {
                     Log.Warn("Failed creating subscription {sub} for topic {topic} {times}",
-                        _subscriptionName.ToString(), _inputTopic.ToString(), retries + 1);
+                        _googlePubSubSubscriptionName.ToString(), _googlePubSubTopicName.ToString(), retries + 1);
                     retries++;
                     if (retries == maxRetries)
-                        throw new RebusApplicationException($"Could not create subscription topic {_inputTopic}");
+                        throw new RebusApplicationException($"Could not create subscription topic {_googlePubSubTopicName}");
                 }
         }
     }
@@ -199,13 +264,14 @@ public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable
     public override async Task<TransportMessage> Receive(ITransactionContext context,
         CancellationToken cancellationToken)
     {
-        if (_subscriberClient == null) return null;
+        if (_googlePubSubscriberServiceApiClient == null) return null;
 
         ReceivedMessage receivedMessage = null;
+        
         try
         {
-            var response = await _subscriberClient.PullAsync(
-                new PullRequest { SubscriptionAsSubscriptionName = _subscriptionName, MaxMessages = 1 },
+            var response = await _googlePubSubscriberServiceApiClient.PullAsync(
+                new PullRequest { SubscriptionAsSubscriptionName = _googlePubSubSubscriptionName, MaxMessages = 1 },
                 CallSettings.FromCancellationToken(cancellationToken)
             );
             receivedMessage = response.ReceivedMessages.FirstOrDefault();
@@ -226,7 +292,6 @@ public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable
             throw new RebusApplicationException(ex, "Failed when fetching messages from GooglePubSub");
         }
 
-
         if (receivedMessage == null) return null;
 
         var receivedTransportMessage = _messageConverter.ToTransport(receivedMessage.Message);
@@ -239,18 +304,18 @@ public class GoogleCloudPubSubTransport : AbstractRebusTransport, IInitializable
             return null;
         }
 
-        var leaseRenewer = new MessageLeaseRenewer(receivedMessage, _subscriberClient, _subscriptionName, _subscription.AckDeadlineSeconds);
+        var leaseRenewer = new MessageLeaseRenewer(receivedMessage, _googlePubSubscriberServiceApiClient, _googlePubSubSubscriptionName, _googleCloudPubSubTransportSettings.AckDeadlineSeconds);
         _leaseRenewers.TryAdd(receivedMessage.Message.MessageId, leaseRenewer);
 
         context.OnAck(async ctx =>
         {
-            await _subscriberClient.AcknowledgeAsync(_subscriptionName, new[] { receivedMessage.AckId });
+            await _googlePubSubscriberServiceApiClient.AcknowledgeAsync(_googlePubSubSubscriptionName, new[] { receivedMessage.AckId });
             _leaseRenewers.TryRemove(receivedMessage.Message.MessageId, out _);
         });
 
         context.OnNack(async ctx =>
         {
-            await _subscriberClient.ModifyAckDeadlineAsync(_subscriptionName, new[] { receivedMessage.AckId }, 0);
+            await _googlePubSubscriberServiceApiClient.ModifyAckDeadlineAsync(_googlePubSubSubscriptionName, new[] { receivedMessage.AckId }, 0);
             _leaseRenewers.TryRemove(receivedMessage.Message.MessageId, out _);
         });
 

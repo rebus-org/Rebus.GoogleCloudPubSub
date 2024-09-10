@@ -19,8 +19,8 @@ namespace Rebus.GoogleCloudPubSub.Tests;
 [TestFixture]
 public class GoogleCloudPubSubLeaseRenewalTest : GoogleCloudFixtureBase
 {
-    private const string QueueName = "your-subscription-name";
-
+    private const string QueueName = "topicName:subscriptionName";
+    
     readonly ConsoleLoggerFactory _consoleLoggerFactory = new(false);
     BuiltinHandlerActivator _activator;
     GoogleCloudPubSubTransport _transport;
@@ -34,7 +34,8 @@ public class GoogleCloudPubSubLeaseRenewalTest : GoogleCloudFixtureBase
             QueueName,
             _consoleLoggerFactory,
             new TplAsyncTaskFactory(_consoleLoggerFactory),
-            new DefaultMessageConverter()
+            new DefaultMessageConverter(),
+            new GoogleCloudPubSubTransportSettings()
         );
 
         Using(_transport);

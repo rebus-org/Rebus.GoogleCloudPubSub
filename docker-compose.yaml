@@ -2,17 +2,30 @@ version: "3"
 
 services:
   pubsub:
-    image: fardog/gcloud-pubsub-emulator
-    entrypoint: ["/google-cloud-sdk/platform/pubsub-emulator/bin/cloud-pubsub-emulator", "--host=0.0.0.0", "--port=8085", "--project=dummypubsubproject"]
+    image: messagebird/gcloud-pubsub-emulator:latest
+    platform: linux/amd64
     ports:
-      - '8085:8085'
+      - "8111:8681"
+    volumes:
+      - /data
 
   tests:
     build: .
     environment:
-      - PUBSUB_EMULATOR_HOST=pubsub:8085
+      - PUBSUB_EMULATOR_HOST=pubsub:8681
       - PUBSUB_PROJECT_ID=emulator
     volumes:
       - ./:/tmp/testresults.host
+    command:
+      - /bin/sh
+      - -c
+      - |
+        wait-for-it.sh pubsub:8682 -- echo "PubSub and topics are up!" && \
+        dotnet test --collect:"XPlat Code Coverage" --test-adapter-path:. \
+        --logger:"junit;LogFilePath=/tmp/testresults.run/{assembly}-test-result.xml;MethodFormat==Class;FailureBodyFormat=Verbose" \
+        --results-directory /tmp/testresults.run && \
+        mkdir -p /tmp/testresults.host/testreports && \
+        cp -r /tmp/testresults.run/* /tmp/testresults.host/testreports/
+    
     depends_on:
       - pubsub

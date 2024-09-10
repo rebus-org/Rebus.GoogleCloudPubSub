@@ -6,11 +6,17 @@ cache:
   - packages -> **\packages.config
   - '%LocalAppData%\NuGet\Cache'
 
+environment:
+  PUBSUB_EMULATOR_HOST: localhost:8681
+  PUBSUB_PROJECT_ID: emulator
+
 before_build:
+  - docker run -d --name pubsub-emulator -p 8681:8681 messagebird/gcloud-pubsub-emulator:latest
   - appveyor-retry dotnet restore -v Minimal
 
 build_script:
   - dotnet build -c Release --no-restore
 
 test_script:
+  - Start-Sleep -Seconds 10; echo "Timer finished!"
   - dotnet test -c Release --no-restore
