@@ -27,6 +27,8 @@
 ## 0.0.9
 * Make message converter configurable, thus enabling different wire-level formats - thanks [goliveiracod]
 
+## 0.0.10
+* Add automatic lease renewal - thanks [goliveiracod]
 
 ---
 
