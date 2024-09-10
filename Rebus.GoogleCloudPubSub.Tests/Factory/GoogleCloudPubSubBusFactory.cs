@@ -7,51 +7,52 @@ using Rebus.Config;
 using Rebus.GoogleCloudPubSub.Messages;
 using Rebus.Logging;
 using Rebus.Tests.Contracts.Transports;
+using Rebus.Threading.TaskParallelLibrary;
 
-namespace Rebus.GoogleCloudPubSub.Tests.Factory
+namespace Rebus.GoogleCloudPubSub.Tests.Factory;
+
+public class GoogleCloudPubSubBusFactory : IBusFactory
 {
-    public class GoogleCloudPubSubBusFactory : IBusFactory
+    private readonly string _projectId = GoogleCredentials.GetProjectIdFromGoogleCredentials();
+    private readonly List<IDisposable> _stuffToDispose = new();
+
+    public IBus GetBus<TMessage>(string inputQueueAddress, Func<TMessage, Task> handler)
     {
-        private readonly string _projectId = GoogleCredentials.GetProjectIdFromGoogleCredentials();
-        readonly List<IDisposable> _stuffToDispose = new();
+        var builtinHandlerActivator = new BuiltinHandlerActivator();
 
-        public IBus GetBus<TMessage>(string inputQueueAddress, Func<TMessage, Task> handler)
-        {
-            var builtinHandlerActivator = new BuiltinHandlerActivator();
+        builtinHandlerActivator.Handle(handler);
 
-            builtinHandlerActivator.Handle(handler);
+        PurgeQueue(inputQueueAddress);
 
-            PurgeQueue(inputQueueAddress);
+        var bus = Configure.With(builtinHandlerActivator)
+            .Transport(t => t.UsePubSub(_projectId, inputQueueAddress))
+            .Options(o =>
+            {
+                o.SetNumberOfWorkers(10);
+                o.SetMaxParallelism(10);
+            })
+            .Start();
 
-            var bus = Configure.With(builtinHandlerActivator)
-                .Transport(t => t.UsePubSub(_projectId,inputQueueAddress))
-                .Options(o =>
-                {
-                    o.SetNumberOfWorkers(10);
-                    o.SetMaxParallelism(10);
-                })
-                .Start();
+        _stuffToDispose.Add(bus);
 
-            _stuffToDispose.Add(bus);
+        return bus;
+    }
 
-            return bus;
-        }
+    public void Cleanup()
+    {
+        _stuffToDispose.ForEach(d => d.Dispose());
+        _stuffToDispose.Clear();
+    }
 
-        void PurgeQueue(string queueName)
-        {
-            var consoleLoggerFactory = new ConsoleLoggerFactory(false);
+    private void PurgeQueue(string queueName)
+    {
+        var consoleLoggerFactory = new ConsoleLoggerFactory(false);
 
-            using var transport = new GoogleCloudPubSubTransport(_projectId, queueName, consoleLoggerFactory, new DefaultMessageConverter());
+        using var transport = new GoogleCloudPubSubTransport(_projectId, queueName, consoleLoggerFactory,
+            new TplAsyncTaskFactory(consoleLoggerFactory), new DefaultMessageConverter());
 
-            transport.PurgeQueueAsync()
-                .GetAwaiter()
-                .GetResult();
-        }
-
-        public void Cleanup()
-        {
-            _stuffToDispose.ForEach(d => d.Dispose());
-            _stuffToDispose.Clear();
-        }
+        transport.PurgeQueueAsync()
+            .GetAwaiter()
+            .GetResult();
     }
 }
