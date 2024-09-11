@@ -18,7 +18,7 @@ namespace Rebus.GoogleCloudPubSub.Tests;
 public class AckDeadlineSecondsTest : GoogleCloudFixtureBase
 {
     private const string QueueName = "test-topic:test-subscription";
-    private const int MaxAckDeadlineSeconds = 3;
+    private const int MaxAckDeadlineSeconds = 10;
     private readonly ConsoleLoggerFactory _consoleLoggerFactory = new(false);
     private BuiltinHandlerActivator _activator;
     private GoogleCloudPubSubTransport _transport;

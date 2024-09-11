@@ -1,22 +1,35 @@
 image: Visual Studio 2022
+environment:
+  PATH: $(LOCALAPPDATA)\Google\Cloud SDK\google-cloud-sdk\bin;$(APPDATA)\npm;C:\Python39;$(PATH)
+  GCLOUD_SDK_INSTALLATION_NO_PROMPT: true
+  CLOUDSDK_PYTHON: C:\Python39\python.exe
+  PUBSUB_EMULATOR_HOST: localhost:8681
+  PUBSUB_PROJECT_ID: emulator
 
 shallow_clone: true
 
 cache:
   - packages -> **\packages.config
   - '%LocalAppData%\NuGet\Cache'
+  - $(LOCALAPPDATA)\Google\Cloud SDK
+  - $(USERPROFILE)\Documents\WindowsPowerShell\Modules
 
-environment:
-  PUBSUB_EMULATOR_HOST: localhost:8681
-  PUBSUB_PROJECT_ID: emulator
+install:
+  - ps: Install-Module "GoogleCloud"
+  - ps: Import-Module "GoogleCloud"
+  - gcloud components install beta --quiet
+  - gcloud components install pubsub-emulator --quiet
 
 before_build:
-  - docker run -d --name pubsub-emulator -p 8681:8681 messagebird/gcloud-pubsub-emulator:latest
   - appveyor-retry dotnet restore -v Minimal
 
 build_script:
   - dotnet build -c Release --no-restore
 
 test_script:
-  - Start-Sleep -Seconds 10; echo "Timer finished!"
+  - ps: |
+      Start-Job -ScriptBlock {
+        gcloud beta emulators pubsub start --host-port=localhost:8681 --project=emulator
+      }
+  - sleep 10 && echo "Timer finished!"
   - dotnet test -c Release --no-restore

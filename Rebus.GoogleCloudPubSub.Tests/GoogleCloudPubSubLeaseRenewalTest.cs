@@ -20,12 +20,13 @@ namespace Rebus.GoogleCloudPubSub.Tests;
 public class GoogleCloudPubSubLeaseRenewalTest : GoogleCloudFixtureBase
 {
     private const string QueueName = "topicName:subscriptionName";
-    
-    readonly ConsoleLoggerFactory _consoleLoggerFactory = new(false);
-    BuiltinHandlerActivator _activator;
-    GoogleCloudPubSubTransport _transport;
-    IBus _bus;
-    IBusStarter _busStarter;
+    private const int MaxAckDeadlineSeconds = 10;
+
+    private readonly ConsoleLoggerFactory _consoleLoggerFactory = new(false);
+    private BuiltinHandlerActivator _activator;
+    private GoogleCloudPubSubTransport _transport;
+    private IBus _bus;
+    private IBusStarter _busStarter;
 
     protected override void SetUp()
     {
@@ -41,15 +42,13 @@ public class GoogleCloudPubSubLeaseRenewalTest : GoogleCloudFixtureBase
         Using(_transport);
         _transport.Initialize();
         AsyncHelpers.RunSync(() => _transport.PurgeQueueAsync());
-        
+
         _activator = new BuiltinHandlerActivator();
         _busStarter = Configure.With(_activator)
-            .Logging(l => l.Use(new ListLoggerFactory(outputToConsole: true, detailed: true)))
-            .Transport(t => t.UsePubSub(ProjectId, QueueName))
-            .Options(o =>
-            {
-                o.UseTplToReceiveMessages();
-            })
+            .Logging(l => l.Use(new ListLoggerFactory(true, true)))
+            .Transport(t => t.UsePubSub(ProjectId, QueueName)
+                .SetAckDeadlineSeconds(MaxAckDeadlineSeconds).EnableAutomaticLeaseRenewal())
+            .Options(o => { o.UseTplToReceiveMessages(); })
             .Create();
 
         _bus = _busStarter.Bus;
@@ -63,22 +62,21 @@ public class GoogleCloudPubSubLeaseRenewalTest : GoogleCloudFixtureBase
 
         _activator.Handle<string>(async (bus, context, message) =>
         {
-            Console.WriteLine($"Received message with ID {context.Headers.GetValue(Headers.MessageId)} - processing...");
-            
-            await Task.Delay(TimeSpan.FromMinutes(3));
-
+            Console.WriteLine(
+                $"Received message with ID {context.Headers.GetValue(Headers.MessageId)} - processing...");
+            await Task.Delay(TimeSpan.FromSeconds(MaxAckDeadlineSeconds * 2));
             Console.WriteLine("Finished processing message.");
             gotMessage.Set();
         });
 
         _busStarter.Start();
-        
+
         await _bus.SendLocal("Test message for lease renewal");
-        
-        Assert.IsTrue(gotMessage.WaitOne(TimeSpan.FromMinutes(3.5)), "Message was not processed in time.");
-        
+
+        Assert.IsTrue(gotMessage.WaitOne(TimeSpan.FromSeconds(MaxAckDeadlineSeconds * 2.5)),
+            "Message processed, lease renewed.");
         _bus.Dispose();
-        
+
         using var scope = new RebusTransactionScope();
         var message = await _transport.Receive(scope.TransactionContext, CancellationToken.None);
         await scope.CompleteAsync();
