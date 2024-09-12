@@ -30,6 +30,10 @@
 ## 0.0.10
 * Add automatic lease renewal - thanks [goliveiracod]
 
+## 0.0.11
+* Add support for manual resource configuration - thanks [goliveiracod]
+
+
 ---
 
 [asleire]: https://github.com/asleire
