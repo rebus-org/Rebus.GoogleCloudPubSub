@@ -49,7 +49,7 @@ public class GoogleCloudPubSubBusFactory : IBusFactory
         var consoleLoggerFactory = new ConsoleLoggerFactory(false);
 
         using var transport = new GoogleCloudPubSubTransport(_projectId, queueName, consoleLoggerFactory,
-            new TplAsyncTaskFactory(consoleLoggerFactory), new DefaultMessageConverter());
+            new TplAsyncTaskFactory(consoleLoggerFactory), new DefaultMessageConverter(), new GoogleCloudPubSubTransportSettings());
 
         transport.PurgeQueueAsync()
             .GetAwaiter()
