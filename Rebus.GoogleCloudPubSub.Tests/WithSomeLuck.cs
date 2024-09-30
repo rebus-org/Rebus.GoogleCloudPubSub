@@ -86,7 +86,7 @@ public class WithSomeLuck : GoogleCloudFixtureBase
 
         var sender = Configure.With(Using(new BuiltinHandlerActivator()))
             .Transport(t => t.UsePubSubAsOneWayClient(ProjectId))
-            .Routing(t => t.TypeBased().Map<string>(Constants.QueueAddress))
+            .Routing(t => t.TypeBased().Map<string>(Constants.Receiver))
             .Start();
 
         await sender.Send($"Some fancy message {Guid.NewGuid():N} 😎");

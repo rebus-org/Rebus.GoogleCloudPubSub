@@ -260,6 +260,8 @@ public class GoogleCloudPubSubTransport : ITransport, IInitializable, IDisposabl
             Log.Info("Tried purging subscription {subscriptionName} by deleting it, but it could not be found",
                 subscriptionName);
         }
+        
+        await Task.Delay(5000);
     }
 
     private async Task<SubscriberServiceApiClient> GetSubscriberServiceApiClientAsync()
@@ -344,8 +346,17 @@ public class GoogleCloudPubSubTransport : ITransport, IInitializable, IDisposabl
         {
             var response = await _subscriberServiceApiClient.PullAsync(
                 new PullRequest { SubscriptionAsSubscriptionName = subscriptionName, MaxMessages = 1 },
-                CallSettings.FromCancellationToken(cancellationToken)
+                CallSettings
+                    .FromCancellationToken(cancellationToken)
+                    .WithRetry(RetrySettings.FromExponentialBackoff(
+                        maxAttempts: 100,
+                        initialBackoff: TimeSpan.FromMilliseconds(200),
+                        maxBackoff: TimeSpan.FromMilliseconds(3200),
+                        backoffMultiplier: 2,
+                        retryFilter: RetrySettings.FilterForStatusCodes(StatusCode.DeadlineExceeded)
+                    ))
             );
+            
             receivedMessage = response.ReceivedMessages.FirstOrDefault();
         }
         catch (RpcException ex) when (ex.Status.StatusCode == StatusCode.Unavailable)
