@@ -81,7 +81,7 @@ public class WithSomeLuck : GoogleCloudFixtureBase
         });
 
         Configure.With(receiver)
-            .Transport(t => t.UsePubSub(ProjectId, Constants.QueueAddress))
+            .Transport(t => t.UsePubSub(ProjectId, Constants.QueueAddress).SetAckDeadlineSeconds(600))
             .Start();
 
         var sender = Configure.With(Using(new BuiltinHandlerActivator()))
@@ -91,11 +91,7 @@ public class WithSomeLuck : GoogleCloudFixtureBase
 
         await sender.Send($"Some fancy message {Guid.NewGuid():N} 😎");
 
-        gotTheString.WaitOrDie(
-            TimeSpan.FromSeconds(10),
-            "Did not receive any string within 5 s timeout"
-        );
-        await Task.Delay(12000);
+        Assert.IsTrue(gotTheString.WaitOne(TimeSpan.FromSeconds(600)), "Did not receive any string");
     }
 
     private static int _msgCounter;

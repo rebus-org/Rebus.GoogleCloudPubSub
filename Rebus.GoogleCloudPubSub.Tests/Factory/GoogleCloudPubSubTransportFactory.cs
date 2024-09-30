@@ -19,7 +19,7 @@ public class GoogleCloudPubSubTransportFactory : ITransportFactory
         var transport = new GoogleCloudPubSubTransport(ProjectId, Constants.Receiver,
             consoleLoggerFactory,
             new TplAsyncTaskFactory(consoleLoggerFactory), new DefaultMessageConverter(),
-            new GoogleCloudPubSubTransportSettings());
+            new GoogleCloudPubSubTransportSettings().SetAckDeadlineSeconds(600));
 
         _disposables.Push(transport);
 
@@ -31,7 +31,7 @@ public class GoogleCloudPubSubTransportFactory : ITransportFactory
         var consoleLoggerFactory = new ConsoleLoggerFactory(false);
         var transport = new GoogleCloudPubSubTransport(ProjectId, inputQueue, consoleLoggerFactory,
             new TplAsyncTaskFactory(consoleLoggerFactory), new DefaultMessageConverter(),
-            new GoogleCloudPubSubTransportSettings());
+            new GoogleCloudPubSubTransportSettings().SetAckDeadlineSeconds(600));
         AsyncHelpers.RunSync(transport.PurgeQueueAsync);
         transport.Initialize();
 
