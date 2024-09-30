@@ -32,7 +32,7 @@ public class AckDeadlineSecondsTest : GoogleCloudFixtureBase
             new GoogleCloudPubSubTransportSettings());
         Using(_transport);
         _transport.Initialize();
-        AsyncHelpers.RunSync(() => _transport.PurgeQueueAsync());
+        AsyncHelpers.RunSync(_transport.PurgeQueueAsync);
         _activator = new BuiltinHandlerActivator();
         _busStarter = Configure.With(_activator).Logging(l => l.Use(_consoleLoggerFactory)).Transport(t =>
             t.UsePubSub(ProjectId, QueueName).SetAckDeadlineSeconds(MaxAckDeadlineSeconds)).Options(o =>

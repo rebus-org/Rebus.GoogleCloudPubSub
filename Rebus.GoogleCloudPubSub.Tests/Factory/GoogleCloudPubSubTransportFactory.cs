@@ -32,7 +32,7 @@ public class GoogleCloudPubSubTransportFactory : ITransportFactory
         var transport = new GoogleCloudPubSubTransport(ProjectId, inputQueue, consoleLoggerFactory,
             new TplAsyncTaskFactory(consoleLoggerFactory), new DefaultMessageConverter(),
             new GoogleCloudPubSubTransportSettings());
-        transport.PurgeQueueAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        AsyncHelpers.RunSync(transport.PurgeQueueAsync);
         transport.Initialize();
 
         _disposables.Push(transport);

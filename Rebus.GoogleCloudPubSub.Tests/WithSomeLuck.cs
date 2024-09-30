@@ -67,6 +67,37 @@ public class WithSomeLuck : GoogleCloudFixtureBase
         );
         await Task.Delay(5000);
     }
+    
+    [Test]
+    public async Task BasicSendReceiveTestWillSucceedUsingSenderAsOneWayClient()
+    {
+        var gotTheString = Using(new ManualResetEvent(false));
+        var receiver = Using(new BuiltinHandlerActivator());
+
+        receiver.Handle<string>(msg =>
+        {
+            Console.WriteLine($"Got message from queue: {msg}");
+            gotTheString.Set();
+            return Task.CompletedTask;
+        });
+
+        Configure.With(receiver)
+            .Transport(t => t.UsePubSub(ProjectId, Constants.QueueAddress))
+            .Start();
+
+        var sender = Configure.With(Using(new BuiltinHandlerActivator()))
+            .Transport(t => t.UsePubSubAsOneWayClient(ProjectId))
+            .Routing(t => t.TypeBased().Map<string>(Constants.QueueAddress))
+            .Start();
+
+        await sender.Send($"Some fancy message {Guid.NewGuid():N} 😎");
+
+        gotTheString.WaitOrDie(
+            TimeSpan.FromSeconds(10),
+            "Did not receive any string within 5 s timeout"
+        );
+        await Task.Delay(5000);
+    }
 
     private static int _msgCounter;
 

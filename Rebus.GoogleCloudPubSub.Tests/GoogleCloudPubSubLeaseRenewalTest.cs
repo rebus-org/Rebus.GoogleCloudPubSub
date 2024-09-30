@@ -41,8 +41,7 @@ public class GoogleCloudPubSubLeaseRenewalTest : GoogleCloudFixtureBase
 
         Using(_transport);
         _transport.Initialize();
-        AsyncHelpers.RunSync(() => _transport.PurgeQueueAsync());
-
+        AsyncHelpers.RunSync(_transport.PurgeQueueAsync);
         _activator = new BuiltinHandlerActivator();
         _busStarter = Configure.With(_activator)
             .Logging(l => l.Use(new ListLoggerFactory(true, true)))
