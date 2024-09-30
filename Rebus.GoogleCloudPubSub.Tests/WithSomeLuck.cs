@@ -74,11 +74,10 @@ public class WithSomeLuck : GoogleCloudFixtureBase
         var gotTheString = Using(new ManualResetEvent(false));
         var receiver = Using(new BuiltinHandlerActivator());
 
-        receiver.Handle<string>(msg =>
+        receiver.Handle<string>(async msg =>
         {
             Console.WriteLine($"Got message from queue: {msg}");
             gotTheString.Set();
-            return Task.CompletedTask;
         });
 
         Configure.With(receiver)
@@ -96,7 +95,7 @@ public class WithSomeLuck : GoogleCloudFixtureBase
             TimeSpan.FromSeconds(10),
             "Did not receive any string within 5 s timeout"
         );
-        await Task.Delay(5000);
+        await Task.Delay(12000);
     }
 
     private static int _msgCounter;

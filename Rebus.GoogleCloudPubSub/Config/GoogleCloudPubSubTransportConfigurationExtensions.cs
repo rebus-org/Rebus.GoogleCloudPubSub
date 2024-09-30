@@ -46,6 +46,8 @@ public static class GoogleCloudPubSubTransportConfigurationExtensions
 
         configurer.OtherService<IMessageConverter>().Register(c => new DefaultMessageConverter());
         
+        OneWayClientBackdoor.ConfigureOneWayClient(configurer);
+        
         return settings;
     }
 }
