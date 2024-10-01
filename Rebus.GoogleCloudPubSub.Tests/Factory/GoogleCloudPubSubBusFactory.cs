@@ -51,8 +51,6 @@ public class GoogleCloudPubSubBusFactory : IBusFactory
         using var transport = new GoogleCloudPubSubTransport(_projectId, queueName, consoleLoggerFactory,
             new TplAsyncTaskFactory(consoleLoggerFactory), new DefaultMessageConverter(), new GoogleCloudPubSubTransportSettings());
 
-        transport.PurgeQueueAsync()
-            .GetAwaiter()
-            .GetResult();
+        AsyncHelpers.RunSync(transport.PurgeQueueAsync);
     }
 }

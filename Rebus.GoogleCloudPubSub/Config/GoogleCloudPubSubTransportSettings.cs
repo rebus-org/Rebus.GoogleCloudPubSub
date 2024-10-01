@@ -4,7 +4,7 @@ public class GoogleCloudPubSubTransportSettings
 {
     internal bool AutomaticLeaseRenewalEnabled { get; private set; }
     internal bool SkipResourceCreationEnabled { get; private set; }
-    internal int AckDeadlineSeconds { get; private set; } = 30;
+    internal int AckDeadlineSeconds { get; private set; } = 60;
 
 
     /// <summary>
