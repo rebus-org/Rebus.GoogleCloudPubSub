@@ -33,6 +33,8 @@
 ## 0.0.11
 * Add support for manual resource configuration - thanks [goliveiracod]
 
+## 0.0.12
+* Fix one-way client configuration - thanks [goliveiracod]
 
 ---
 
