@@ -4,6 +4,11 @@
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<LangVersion>11</LangVersion>
 		<RootNamespace>Rebus</RootNamespace>
+		<Authors>mookid8000</Authors>
+		<PackageProjectUrl>https://rebus.fm/what-is-rebus/</PackageProjectUrl>
+		<Copyright>Copyright Rebus FM ApS 2012</Copyright>
+		<RepositoryUrl>https://github.com/rebus-org/Rebus.GoogleCloudPubSub</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Authors>mookid8000</Authors>
 		<Company>Rebus FM ApS</Company>
